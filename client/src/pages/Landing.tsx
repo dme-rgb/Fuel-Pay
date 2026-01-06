@@ -39,11 +39,13 @@ export default function Home() {
 
   const handleProceed = () => {
     if (calcResult) {
-      // Pass state via history or simplistic global store. 
-      // For wouter, we can encode in URL or use localStorage. 
-      // Using localStorage for simplicity in this specific flow.
       localStorage.setItem("txn_pending", JSON.stringify(calcResult));
-      setLocation("/customer-login");
+      const customer = localStorage.getItem("customer");
+      if (customer) {
+        setLocation("/payment");
+      } else {
+        setLocation("/customer-login");
+      }
     }
   };
 
