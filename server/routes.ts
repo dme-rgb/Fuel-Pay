@@ -80,7 +80,18 @@ export async function registerRoutes(
       const input = req.body; // Skip strict parse for speed/debugging since schema changed
       
       // Assign Auth Code
-      const otp = await storage.getNextOtp();
+      let otp = await storage.getNextOtp();
+      
+      // Auto-refill simulation if empty
+      if (!otp) {
+        await storage.seedOtps([
+          Math.floor(1000 + Math.random() * 9000).toString(),
+          Math.floor(1000 + Math.random() * 9000).toString(),
+          Math.floor(1000 + Math.random() * 9000).toString()
+        ]);
+        otp = await storage.getNextOtp();
+      }
+
       let authCode = otp ? otp.code : "NO-OTP-AVAILABLE";
       if (otp) {
         await storage.markOtpUsed(otp.id);
