@@ -1,141 +1,106 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Layout } from "@/components/Layout";
-import { CurrencyInput } from "@/components/CurrencyInput";
-import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
-import { useCalculateTransaction } from "@/hooks/use-transactions";
-import { useSettings } from "@/hooks/use-settings";
-import { Loader2, ArrowRight, Droplets, TrendingDown } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-
-const formSchema = z.object({
-  amount: z.coerce.number().min(1, "Amount must be greater than 0"),
-});
+import { useTransactions } from "@/hooks/use-transactions";
+import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
+import { Plus, Wallet, PiggyBank, History, Fuel } from "lucide-react";
+import { format } from "date-fns";
+import { motion } from "framer-motion";
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { data: settings } = useSettings();
-  const calculateMutation = useCalculateTransaction();
-  const [calcResult, setCalcResult] = useState<any>(null);
+  const { data: transactions } = useTransactions();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { amount: 0 },
-  });
-
-  // Real-time calculation debounce could be added, but manual trigger is safer for accuracy
-  const handleCalculate = async (values: z.infer<typeof formSchema>) => {
-    try {
-      const result = await calculateMutation.mutateAsync(values.amount);
-      setCalcResult(result);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleProceed = () => {
-    if (calcResult) {
-      // Pass state via history or simplistic global store. 
-      // For wouter, we can encode in URL or use localStorage. 
-      // Using localStorage for simplicity in this specific flow.
-      localStorage.setItem("txn_pending", JSON.stringify(calcResult));
-      setLocation("/payment");
-    }
-  };
+  const totalSavings = transactions?.reduce((acc, txn) => acc + Number(txn.savings), 0) || 0;
+  const totalSpent = transactions?.reduce((acc, txn) => acc + Number(txn.finalAmount), 0) || 0;
 
   return (
     <Layout>
       <div className="space-y-8 animate-enter">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold font-display text-primary">
-            Refuel & Save
-          </h1>
-          <p className="text-muted-foreground">
-            Enter your fuel amount to calculate your exclusive discount.
-          </p>
+        <div className="flex justify-between items-center">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold font-display text-primary">Dashboard</h1>
+            <p className="text-muted-foreground text-sm">Your fuel spending and savings overview</p>
+          </div>
+          <Button 
+            size="lg" 
+            className="rounded-xl shadow-lg shadow-primary/20 font-display"
+            onClick={() => setLocation("/")}
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            New Fuel
+          </Button>
         </div>
 
-        {/* Calculation Form */}
-        <form 
-          onSubmit={form.handleSubmit(handleCalculate)} 
-          className="space-y-6 bg-white p-6 rounded-2xl shadow-sm border border-border"
-        >
-          <CurrencyInput
-            {...form.register("amount")}
-            placeholder="500"
-            label="Enter Amount"
-            autoFocus
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          <StatCard
+            label="Total Spent"
+            value={`₹${totalSpent.toFixed(2)}`}
+            icon={<Wallet className="w-5 h-5" />}
+            variant="default"
           />
+          <StatCard
+            label="Total Savings"
+            value={`₹${totalSavings.toFixed(2)}`}
+            icon={<PiggyBank className="w-5 h-5" />}
+            variant="accent"
+          />
+        </div>
 
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full text-lg h-14 rounded-xl font-display shadow-lg shadow-primary/20"
-            disabled={calculateMutation.isPending}
-          >
-            {calculateMutation.isPending ? (
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        {/* Recent Transactions */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold font-display text-primary flex items-center">
+              <History className="w-5 h-5 mr-2" />
+              Recent History
+            </h2>
+          </div>
+
+          <div className="space-y-3">
+            {transactions?.length === 0 ? (
+              <div className="text-center py-12 bg-secondary/20 rounded-2xl border-2 border-dashed border-border">
+                <Fuel className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground">No transactions yet</p>
+                <Button 
+                  variant="link" 
+                  className="text-accent"
+                  onClick={() => setLocation("/")}
+                >
+                  Start your first fill
+                </Button>
+              </div>
             ) : (
-              <TrendingDown className="w-5 h-5 mr-2" />
-            )}
-            Calculate Savings
-          </Button>
-        </form>
-
-        {/* Results Area */}
-        <AnimatePresence>
-          {calcResult && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="space-y-6"
-            >
-              <div className="relative overflow-hidden rounded-2xl bg-primary text-primary-foreground p-6 shadow-xl shadow-primary/20">
-                <div className="absolute top-0 right-0 p-8 opacity-10">
-                   <Droplets className="w-32 h-32" />
-                </div>
-                
-                <div className="relative z-10 space-y-6">
-                  <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                    <div className="text-primary-foreground/70 text-sm font-medium">Fuel Volume</div>
-                    <div className="font-display text-2xl font-bold">{calcResult.liters} L</div>
-                  </div>
-
-                  <div className="flex justify-between items-end">
-                    <div className="text-primary-foreground/70 text-sm font-medium">Original Cost</div>
-                    <div className="font-display text-xl font-semibold opacity-70 line-through">₹{calcResult.originalAmount}</div>
-                  </div>
-
-                  <div className="pt-2">
-                    <div className="text-accent text-sm font-bold uppercase tracking-wider mb-1">Total Payable</div>
-                    <div className="font-display text-5xl font-bold text-white tracking-tight">
-                      ₹{calcResult.finalAmount}
+              transactions?.slice(0, 5).map((txn, idx) => (
+                <motion.div
+                  key={txn.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="bg-white p-4 rounded-xl border border-border shadow-sm flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-secondary/50 rounded-full flex items-center justify-center">
+                      <Fuel className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-primary">₹{txn.finalAmount}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {format(new Date(txn.createdAt!), "dd MMM, HH:mm")}
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="bg-white/10 rounded-lg p-3 flex items-center justify-between backdrop-blur-sm">
-                    <span className="font-medium text-sm">You Save</span>
-                    <span className="font-display font-bold text-xl text-accent">₹{calcResult.savings}</span>
+                  <div className="text-right">
+                    <div className="text-accent font-bold text-sm">Saved ₹{txn.savings}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                      {txn.paymentMethod}
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleProceed}
-                size="lg"
-                className="w-full h-16 text-xl rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground font-display shadow-xl shadow-accent/20 animate-pulse"
-              >
-                Proceed to Payment
-                <ArrowRight className="w-6 h-6 ml-2" />
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                </motion.div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </Layout>
   );

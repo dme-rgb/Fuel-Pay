@@ -169,7 +169,7 @@ export default function Success() {
           </Button>
           <Button 
             className="h-12 rounded-xl shadow-lg font-display" 
-            onClick={() => setLocation("/")}
+            onClick={() => setLocation("/dashboard")}
           >
             <Home className="w-4 h-4 mr-2" />
             Home
