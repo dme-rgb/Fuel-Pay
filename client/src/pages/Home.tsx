@@ -59,22 +59,6 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Current Rates */}
-        <div className="grid grid-cols-2 gap-4">
-          <StatCard
-            label="Fuel Price"
-            value={`₹${settings?.fuelPrice || "..."}`}
-            subValue="Per Liter"
-            variant="default"
-          />
-          <StatCard
-            label="Your Discount"
-            value={`₹${settings?.discountPerLiter || "..."}`}
-            subValue="Per Liter"
-            variant="accent"
-          />
-        </div>
-
         {/* Calculation Form */}
         <form 
           onSubmit={form.handleSubmit(handleCalculate)} 

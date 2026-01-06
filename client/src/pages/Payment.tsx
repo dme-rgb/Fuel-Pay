@@ -78,6 +78,10 @@ export default function Payment() {
              <span className="text-accent font-medium">Total Discount</span>
              <span className="font-bold text-accent">- ₹{details.savings}</span>
           </div>
+          <div className="flex justify-between items-center text-sm">
+             <span className="text-muted-foreground">Convenience Fee</span>
+             <span className="font-semibold text-primary">₹0.00</span>
+          </div>
           <div className="border-t border-border/50 pt-4 flex justify-between items-center">
              <span className="font-bold text-lg">To Pay</span>
              <span className="font-display font-bold text-3xl text-primary">₹{details.finalAmount}</span>
