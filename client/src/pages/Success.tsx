@@ -128,9 +128,23 @@ export default function Success() {
             {txn.authCode || "PENDING"}
           </div>
           
-          <div className="mt-6 pt-4 border-t border-dashed border-border flex justify-between text-sm">
-             <span className="text-muted-foreground">Amount Paid</span>
-             <span className="font-bold text-primary">₹{txn.finalAmount}</span>
+          <div className="mt-6 pt-4 border-t border-dashed border-border space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Original Amount</span>
+              <span className="font-medium text-primary line-through opacity-50">₹{txn.originalAmount}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-accent font-medium">Discount</span>
+              <span className="font-bold text-accent">- ₹{txn.savings}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Convenience Fee</span>
+              <span className="font-medium text-primary">₹0.00</span>
+            </div>
+            <div className="flex justify-between text-sm pt-2 border-t border-border/50">
+              <span className="font-bold text-primary">Total Paid</span>
+              <span className="font-bold text-primary">₹{txn.finalAmount}</span>
+            </div>
           </div>
           <div className="mt-2 flex justify-between text-sm">
              <span className="text-muted-foreground">Date</span>
