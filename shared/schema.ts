@@ -10,9 +10,16 @@ export const settings = pgTable("settings", {
   discountPerLiter: numeric("discount_per_liter").notNull().default("0.70"),
 });
 
+export const customers = pgTable("customers", {
+  id: serial("id").primaryKey(),
+  phone: varchar("phone", { length: 20 }).notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id"), // Matches users.id from auth.ts
+  customerId: integer("customer_id").references(() => customers.id),
   originalAmount: numeric("original_amount").notNull(),
   discountAmount: numeric("discount_amount").notNull(),
   finalAmount: numeric("final_amount").notNull(),
@@ -22,6 +29,10 @@ export const transactions = pgTable("transactions", {
   status: text("status").default("pending"), // 'pending', 'paid', 'verified'
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
+export type Customer = typeof customers.$inferSelect;
+export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 
 export const otps = pgTable("otps", {
   id: serial("id").primaryKey(),
@@ -36,6 +47,8 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
   createdAt: true,
   status: true, 
   authCode: true 
+}).extend({
+  customerId: z.number().optional(),
 });
 
 export type Settings = typeof settings.$inferSelect;

@@ -10,12 +10,14 @@ import Payment from "@/pages/Payment";
 import Success from "@/pages/Success";
 import AdminDashboard from "@/pages/AdminDashboard";
 import Login from "@/pages/Login";
+import CustomerLogin from "@/pages/CustomerLogin";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/dashboard" component={Home} />
+      <Route path="/customer-login" component={CustomerLogin} />
       <Route path="/payment" component={Payment} />
       <Route path="/success" component={Success} />
       <Route path="/admin" component={AdminDashboard} />

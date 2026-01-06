@@ -1,12 +1,12 @@
 import { db } from "./db";
 import {
-  users, settings, transactions, otps,
+  users, settings, transactions, otps, customers,
   type User,
   type Settings, type InsertSettings,
   type Transaction, type InsertTransaction,
-  type Otp
+  type Otp, type Customer, type InsertCustomer
 } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -15,7 +15,10 @@ export interface IStorage {
   getSettings(): Promise<Settings | undefined>;
   updateSettings(settings: InsertSettings): Promise<Settings>;
 
-  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  getOrCreateCustomer(phone: string): Promise<Customer>;
+  getCustomerTransactions(customerId: number): Promise<Transaction[]>;
+
+  createTransaction(transaction: InsertTransaction & { customerId?: number }): Promise<Transaction>;
   getTransaction(id: number): Promise<Transaction | undefined>;
   updateTransactionStatus(id: number, status: string, authCode?: string): Promise<Transaction>;
   getTransactions(): Promise<Transaction[]>;
@@ -31,10 +34,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  // Replit Auth uses email/id, not username usually, but for compatibility
   async getUserByUsername(username: string): Promise<User | undefined> {
-    // We don't really have username in Replit Auth schema (it has email, firstName, lastName)
-    // But we'll try email for now if needed, or return undefined
     return undefined; 
   }
 
@@ -54,7 +54,20 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+  async getOrCreateCustomer(phone: string): Promise<Customer> {
+    const [existing] = await db.select().from(customers).where(eq(customers.phone, phone));
+    if (existing) return existing;
+    const [created] = await db.insert(customers).values({ phone }).returning();
+    return created;
+  }
+
+  async getCustomerTransactions(customerId: number): Promise<Transaction[]> {
+    return await db.select().from(transactions)
+      .where(eq(transactions.customerId, customerId))
+      .orderBy(desc(transactions.createdAt));
+  }
+
+  async createTransaction(insertTransaction: InsertTransaction & { customerId?: number }): Promise<Transaction> {
     const [transaction] = await db.insert(transactions).values(insertTransaction).returning();
     return transaction;
   }

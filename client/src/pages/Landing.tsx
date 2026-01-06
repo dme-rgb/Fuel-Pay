@@ -43,7 +43,7 @@ export default function Home() {
       // For wouter, we can encode in URL or use localStorage. 
       // Using localStorage for simplicity in this specific flow.
       localStorage.setItem("txn_pending", JSON.stringify(calcResult));
-      setLocation("/payment");
+      setLocation("/customer-login");
     }
   };
 

@@ -28,12 +28,14 @@ export default function Payment() {
     if (!method || !details) return;
 
     try {
+      const customer = JSON.parse(localStorage.getItem("customer") || "{}");
       const txn = await createMutation.mutateAsync({
         originalAmount: details.originalAmount,
         discountAmount: details.discountAmount,
         finalAmount: details.finalAmount,
         savings: details.savings,
         paymentMethod: method,
+        customerId: customer.id,
       });
       
       localStorage.removeItem("txn_pending");
