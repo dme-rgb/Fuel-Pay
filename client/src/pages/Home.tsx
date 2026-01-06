@@ -37,13 +37,11 @@ export default function Home() {
           <StatCard
             label="Total Spent"
             value={`₹${totalSpent.toFixed(2)}`}
-            icon={<Wallet className="w-5 h-5" />}
             variant="default"
           />
           <StatCard
             label="Total Savings"
             value={`₹${totalSavings.toFixed(2)}`}
-            icon={<PiggyBank className="w-5 h-5" />}
             variant="accent"
           />
         </div>
@@ -63,8 +61,8 @@ export default function Home() {
                 <Fuel className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
                 <p className="text-muted-foreground">No transactions yet</p>
                 <Button 
-                  variant="link" 
-                  className="text-accent"
+                  variant="ghost" 
+                  className="text-accent hover:bg-accent/10"
                   onClick={() => setLocation("/")}
                 >
                   Start your first fill
