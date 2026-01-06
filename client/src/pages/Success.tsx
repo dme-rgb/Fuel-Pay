@@ -44,7 +44,6 @@ export default function Success() {
         description: "Please re-initialize the process with DEO and refresh the auth code.",
         variant: "destructive",
       });
-      return;
     }
     setAttempts((prev) => prev + 1);
     setTimer(15);
