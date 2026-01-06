@@ -1,0 +1,79 @@
+We are building a fuel payment web app.
+
+
+
+Customer selects fuel amount → app applies internal discount logic →
+customer sees reduced payable amount in the newxt screen and savings →
+customer completes payment by choose the option form cash/card/ upi /net banking→
+success screen shows auth code (OTP which is already featching form the sheet) →
+home screen shows savings summary.
+
+This is a WEB APP, not a native app.
+
+====================================
+BUSINESS LOGIC
+====================================
+
+- Fuel discount rate: ₹0.70 per liter
+- Discount logic must be INTERNAL
+- Customer must NOT see discount calculation
+- Customer only sees:
+  - Original amount
+  - Final payable amount
+  - Total savings
+
+====================================
+SCREEN REQUIREMENTS
+====================================
+
+SCREEN 1 – PAYMENT enter page
+- UI similar to reference images
+- Customer inputs/selects amount
+
+
+SCREEN 2 – PAYMENT PAGE
+- UI similar to reference images
+- Customer inputs/selects amount
+- Show:
+  - Original amount
+  - Reduced amount
+  - Savings banner
+- Bill details:
+  - Total bill amount
+  - Discount (shown, not explained)
+  - Convenience fee (₹0)
+- NO location selector
+- NO restaurant logic
+- CTA: Proceed to payment
+and customer choose the payment option form cash/card/net bankping/upi and procced the payment anfter payment is complete it will go to the payment page 
+
+SCREEN 2 – PAYMENT SUCCESS
+- Animated verification icon at top
+- Animation disappears after ~60 seconds
+- Show:
+  - Payment successful message
+  - Paid amount
+  - Auth Code
+- Auth Code logic:
+  - OTPs stored in Google Sheet there is also a refresh button if auth code not work in 15 sec after 2 attempt show that plz reinitial the process with deo and refresh the auth code 
+  - Each payment consumes next unused OTP
+  - Must be concurrency-safe
+- Top-right Home button also we get the meg for the delivery done is amount if the amount is match the original one directly go to the home (the amount is algo got form the same sheet as where form the otp are getting 
+
+SCREEN 3 – HOME / SUMMARY
+- Show:
+  - Total amount saved
+- DO NOT show earned rewards
+
+====================================
+TECHNICAL REQUIREMENTS
+====================================
+
+- Payment gateway integration (India-friendly)
+- Google Sheet integration for OTP/Auth Code/ and amount 
+- all data is stored in the google sheet all the detail 
+- Concurrency-safe OTP assignment
+- Secure and scalable approach
+
+also there is an admin login and page where we can select the discount and prize of the fuel 
+currently we are talking to the payment partner than we can implement it.
