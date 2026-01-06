@@ -72,7 +72,7 @@ export default function Home() {
                 </Button>
               </div>
             ) : (
-              transactions?.slice(0, 5).map((txn, idx) => (
+              customerTransactions.slice(0, 5).map((txn, idx) => (
                 <motion.div
                   key={txn.id}
                   initial={{ opacity: 0, x: -20 }}
