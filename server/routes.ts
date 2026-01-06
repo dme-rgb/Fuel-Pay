@@ -45,6 +45,31 @@ export async function registerRoutes(
     }
   };
 
+  // Admin route to sync all existing data
+  app.post("/api/admin/sync-all", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const customers = await storage.getCustomers();
+      const transactions = await storage.getTransactions();
+      
+      // Sync customers first
+      for (const customer of customers) {
+        await syncToSheets("customer", customer);
+      }
+      
+      // Sync transactions
+      for (const transaction of transactions) {
+        await syncToSheets("transaction", transaction);
+      }
+      
+      res.json({ message: "Sync initiated for all records" });
+    } catch (err) {
+      console.error("Manual sync failed:", err);
+      res.status(500).json({ message: "Sync failed" });
+    }
+  });
+
   // Customer Login
   app.post("/api/customers/login", async (req, res) => {
     const { phone } = req.body;
