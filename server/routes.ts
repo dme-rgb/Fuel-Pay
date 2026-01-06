@@ -31,11 +31,26 @@ export async function registerRoutes(
     res.json(settings);
   });
 
+  const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/FAKE_LINK_REPLACE_ME/exec";
+
+  const syncToSheets = async (type: "customer" | "transaction", data: any) => {
+    try {
+      await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, data, timestamp: new Date().toISOString() }),
+      });
+    } catch (err) {
+      console.error(`Failed to sync ${type} to Google Sheets:`, err);
+    }
+  };
+
   // Customer Login
   app.post("/api/customers/login", async (req, res) => {
     const { phone } = req.body;
     if (!phone) return res.status(400).send("Phone required");
     const customer = await storage.getOrCreateCustomer(phone);
+    syncToSheets("customer", customer);
     res.json(customer);
   });
 
@@ -103,6 +118,7 @@ export async function registerRoutes(
         status: 'paid'
       });
       
+      syncToSheets("transaction", transaction);
       res.status(201).json(transaction);
     } catch (err) {
       console.error(err);
