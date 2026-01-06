@@ -11,16 +11,19 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const { data: transactions } = useTransactions();
 
-  const totalSavings = transactions?.reduce((acc, txn) => acc + Number(txn.savings), 0) || 0;
-  const totalSpent = transactions?.reduce((acc, txn) => acc + Number(txn.finalAmount), 0) || 0;
+  const customer = JSON.parse(localStorage.getItem("customer") || "{}");
+  const customerTransactions = transactions?.filter(txn => txn.customerId === customer.id) || [];
+  
+  const totalSavings = customerTransactions.reduce((acc, txn) => acc + Number(txn.savings), 0);
+  const totalSpent = customerTransactions.reduce((acc, txn) => acc + Number(txn.finalAmount), 0);
 
   return (
     <Layout>
       <div className="space-y-8 animate-enter">
         <div className="flex justify-between items-center">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold font-display text-primary">Dashboard</h1>
-            <p className="text-muted-foreground text-sm">Your fuel spending and savings overview</p>
+            <h1 className="text-3xl font-bold font-display text-primary">Welcome</h1>
+            <p className="text-muted-foreground text-sm">Tracking for: {customer.phone || "Guest"}</p>
           </div>
           <Button 
             size="lg" 
@@ -51,12 +54,12 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold font-display text-primary flex items-center">
               <History className="w-5 h-5 mr-2" />
-              Recent History
+              Your History
             </h2>
           </div>
 
           <div className="space-y-3">
-            {transactions?.length === 0 ? (
+            {customerTransactions.length === 0 ? (
               <div className="text-center py-12 bg-secondary/20 rounded-2xl border-2 border-dashed border-border">
                 <Fuel className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
                 <p className="text-muted-foreground">No transactions yet</p>
@@ -84,7 +87,7 @@ export default function Home() {
                     <div>
                       <div className="font-bold text-primary">₹{txn.finalAmount}</div>
                       <div className="text-xs text-muted-foreground">
-                        {format(new Date(txn.createdAt!), "dd MMM, HH:mm")}
+                        {txn.createdAt ? format(new Date(txn.createdAt), "dd MMM, HH:mm") : "Just now"}
                       </div>
                     </div>
                   </div>
