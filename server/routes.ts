@@ -100,7 +100,6 @@ export async function registerRoutes(
   });
 
   app.get(api.transactions.list.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
     const transactions = await storage.getTransactions();
     res.json(transactions);
   });
