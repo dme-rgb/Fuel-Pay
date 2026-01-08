@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -10,7 +10,22 @@ import { StatCard } from "@/components/StatCard";
 import { useCalculateTransaction } from "@/hooks/use-transactions";
 import { useSettings } from "@/hooks/use-settings";
 import { Loader2, ArrowRight, Droplets, TrendingDown } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useSpring, useTransform, animate } from "framer-motion";
+
+function AmountDisplay({ target, start }: { target: number, start: number }) {
+  const [displayValue, setDisplayValue] = useState(start);
+
+  useEffect(() => {
+    const controls = animate(start, target, {
+      duration: 1.5,
+      ease: "easeOut",
+      onUpdate: (value) => setDisplayValue(value)
+    });
+    return () => controls.stop();
+  }, [target, start]);
+
+  return <>₹{displayValue.toFixed(2)}</>;
+}
 
 const formSchema = z.object({
   amount: z.coerce.number().min(1, "Amount must be greater than 0"),
@@ -64,14 +79,32 @@ export default function Home() {
         {/* Calculation Form */}
         <form 
           onSubmit={form.handleSubmit(handleCalculate)} 
-          className="space-y-6 bg-white p-6 rounded-2xl shadow-sm border border-border"
+          className="
+            space-y-6 
+            bg-gradient-to-br from-white via-white to-slate-100
+            p-6 
+            rounded-2xl 
+            border border-white/40
+            shadow-[0_10px_30px_rgba(0,0,0,0.12),_0_4px_10px_rgba(0,0,0,0.08)]
+            hover:shadow-[0_16px_45px_rgba(0,0,0,0.18)]
+            transition-all duration-300
+          "
         >
-          <CurrencyInput
-            {...form.register("amount")}
-            placeholder="500"
-            label="Enter Amount"
-            autoFocus
-          />
+          <p className="text-sm font-medium text-muted-foreground">Enter Amount</p>
+          <div className="
+            rounded-xl 
+            bg-gradient-to-b from-slate-100 to-white
+            shadow-inner 
+            ring-1 ring-slate-200
+          ">
+            <CurrencyInput
+              {...form.register("amount")}
+              placeholder="500"
+              
+              autoFocus
+              className="bg-transparent"
+            />
+          </div>
 
           <div className="flex gap-2">
             {[100, 200, 500].map((val) => (
@@ -80,7 +113,18 @@ export default function Home() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="flex-1 rounded-xl h-10 border-2 font-display hover:bg-primary hover:text-primary-foreground transition-colors"
+                className="flex-1 
+                h-11 
+                rounded-xl 
+                border border-slate-300
+                bg-gradient-to-b from-white to-slate-100
+                shadow-[0_4px_0_rgba(0,0,0,0.15)]
+                hover:translate-y-[1px]
+                hover:shadow-[0_2px_0_rgba(0,0,0,0.15)]
+                active:translate-y-[2px]
+                active:shadow-none
+                transition-all
+                font-display"
                 onClick={() => {
                   const current = form.getValues("amount") || 0;
                   form.setValue("amount", Number(current) + val);
@@ -95,7 +139,18 @@ export default function Home() {
           <Button
             type="submit"
             size="lg"
-            className="w-full text-lg h-14 rounded-xl font-display shadow-lg shadow-primary/20"
+            className="w-full 
+            h-14 
+            text-lg 
+            rounded-xl 
+            font-display
+            bg-gradient-to-b from-primary to-primary/60
+            shadow-[0_7px_0_rgba(0,0,0,0.25),_0_8px_30px_rgba(0,0,0,0.25)]
+            hover:translate-y-[1px]
+            hover:shadow-[0_6px_0_rgba(0,0,0,0.25),_0_10px_25px_rgba(0,0,0,0.25)]
+            active:translate-y-[3px]
+            active:shadow-none
+            transition-all"
             disabled={calculateMutation.isPending}
           >
             {calculateMutation.isPending ? (
@@ -122,20 +177,20 @@ export default function Home() {
                 </div>
                 
                 <div className="relative z-10 space-y-6">
-                  <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                    <div className="text-primary-foreground/70 text-sm font-medium">Fuel Volume</div>
-                    <div className="font-display text-2xl font-bold">{calcResult.liters} L</div>
-                  </div>
+                  
 
                   <div className="flex justify-between items-end">
                     <div className="text-primary-foreground/70 text-sm font-medium">Original Cost</div>
-                    <div className="font-display text-xl font-semibold opacity-70 line-through">₹{calcResult.originalAmount}</div>
+                    <div className="font-display text-xl font-semibold opacity-70">₹{calcResult.originalAmount}</div>
                   </div>
 
                   <div className="pt-2">
                     <div className="text-accent text-sm font-bold uppercase tracking-wider mb-1">Total Payable</div>
                     <div className="font-display text-5xl font-bold text-white tracking-tight">
-                      ₹{calcResult.finalAmount}
+                      <AmountDisplay 
+                        target={Number(calcResult.finalAmount)} 
+                        start={Number(calcResult.originalAmount)} 
+                      />
                     </div>
                   </div>
                   
