@@ -84,7 +84,7 @@ export default function Home() {
                 onClick={() => {
                   const current = form.getValues("amount") || 0;
                   form.setValue("amount", Number(current) + val);
-                  form.handleSubmit(handleCalculate)();
+                  setCalcResult(null); // Clear previous calculation to hide discount
                 }}
               >
                 +{val}
