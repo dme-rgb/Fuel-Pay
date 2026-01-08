@@ -12,17 +12,25 @@ import { useSettings } from "@/hooks/use-settings";
 import { Loader2, ArrowRight, Droplets, TrendingDown } from "lucide-react";
 import { motion, AnimatePresence, useSpring, useTransform, animate } from "framer-motion";
 
-function AmountDisplay({ target, start }: { target: number, start: number }) {
+function AmountDisplay({ target, start, onComplete }: { target: number, start: number, onComplete?: () => void }) {
   const [displayValue, setDisplayValue] = useState(start);
 
   useEffect(() => {
-    const controls = animate(start, target, {
-      duration: 1.5,
-      ease: "easeOut",
-      onUpdate: (value) => setDisplayValue(value)
-    });
-    return () => controls.stop();
-  }, [target, start]);
+    // Initial delay to show original amount
+    const timer = setTimeout(() => {
+      const controls = animate(start, target, {
+        duration: 1.5,
+        ease: "easeOut",
+        onUpdate: (value) => setDisplayValue(value),
+        onComplete: () => {
+          if (onComplete) onComplete();
+        }
+      });
+      return () => controls.stop();
+    }, 1000); // 1 second delay to show original amount first
+    
+    return () => clearTimeout(timer);
+  }, [target, start, onComplete]);
 
   return <>₹{displayValue.toFixed(2)}</>;
 }
@@ -36,6 +44,7 @@ export default function Home() {
   const { data: settings } = useSettings();
   const calculateMutation = useCalculateTransaction();
   const [calcResult, setCalcResult] = useState<any>(null);
+  const [showSavings, setShowSavings] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -45,6 +54,7 @@ export default function Home() {
   // Real-time calculation debounce could be added, but manual trigger is safer for accuracy
   const handleCalculate = async (values: z.infer<typeof formSchema>) => {
     try {
+      setShowSavings(false);
       const result = await calculateMutation.mutateAsync(values.amount);
       setCalcResult(result);
     } catch (error) {
@@ -190,25 +200,36 @@ export default function Home() {
                       <AmountDisplay 
                         target={Number(calcResult.finalAmount)} 
                         start={Number(calcResult.originalAmount)} 
+                        onComplete={() => setShowSavings(true)}
                       />
                     </div>
                   </div>
                   
-                  <div className="bg-white/10 rounded-lg p-3 flex items-center justify-between backdrop-blur-sm">
-                    <span className="font-medium text-sm">You Save</span>
-                    <span className="font-display font-bold text-xl text-accent">₹{calcResult.savings}</span>
-                  </div>
+                  <AnimatePresence>
+                    {showSavings && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="bg-white/10 rounded-lg p-3 flex items-center justify-between backdrop-blur-sm"
+                      >
+                        <span className="font-medium text-sm">You Save</span>
+                        <span className="font-display font-bold text-xl text-accent">₹{calcResult.savings}</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
-              <Button
-                onClick={handleProceed}
-                size="lg"
-                className="w-full h-16 text-xl rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground font-display shadow-xl shadow-accent/20 animate-pulse"
-              >
-                Proceed to Payment
-                <ArrowRight className="w-6 h-6 ml-2" />
-              </Button>
+              {showSavings && (
+                <Button
+                  onClick={handleProceed}
+                  size="lg"
+                  className="w-full h-16 text-xl rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground font-display shadow-xl shadow-accent/20 animate-pulse"
+                >
+                  Proceed to Payment
+                  <ArrowRight className="w-6 h-6 ml-2" />
+                </Button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
