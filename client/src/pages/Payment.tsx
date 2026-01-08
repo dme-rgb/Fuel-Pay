@@ -24,8 +24,8 @@ export default function Payment() {
     setDetails(JSON.parse(stored));
   }, [setLocation]);
 
-  const handlePayment = async () => {
-    if (!method || !details) return;
+  const handlePayment = async (selectedMethod: PaymentMethod) => {
+    if (!details) return;
 
     try {
       const customer = JSON.parse(localStorage.getItem("customer") || "{}");
@@ -34,7 +34,7 @@ export default function Payment() {
         discountAmount: details.discountAmount,
         finalAmount: details.finalAmount,
         savings: details.savings,
-        paymentMethod: method,
+        paymentMethod: selectedMethod,
         customerId: customer.id,
       });
       
@@ -67,7 +67,7 @@ export default function Payment() {
 
         <div>
           <h1 className="text-2xl font-bold font-display text-primary">Payment Details</h1>
-          <p className="text-muted-foreground text-sm">Choose a payment method to complete transaction.</p>
+          <p className="text-muted-foreground text-sm">Review your bill and choose how to pay.</p>
         </div>
 
         {/* Summary Card */}
@@ -90,10 +90,36 @@ export default function Payment() {
           </div>
         </div>
 
-        {/* Method Selection */}
-        <div className="space-y-3">
-           <label className="text-sm font-medium text-muted-foreground">Select Payment Method</label>
-           <PaymentMethodSelector selected={method} onSelect={setMethod} />
+        {/* Action Buttons */}
+        <div className="space-y-3 pt-4">
+          <Button
+            onClick={() => handlePayment("upi")}
+            disabled={createMutation.isPending}
+            className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/25 font-display bg-primary text-primary-foreground"
+            size="lg"
+          >
+            {createMutation.isPending ? (
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+            ) : (
+              <ShieldCheck className="w-5 h-5 mr-2" />
+            )}
+            Pay Online (UPI/Card)
+          </Button>
+
+          <Button
+            onClick={() => handlePayment("cash")}
+            disabled={createMutation.isPending}
+            variant="outline"
+            className="w-full h-14 text-lg rounded-xl border-2 font-display"
+            size="lg"
+          >
+            {createMutation.isPending ? (
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+            ) : (
+              <CheckCircle2 className="w-5 h-5 mr-2" />
+            )}
+            Pay by Cash
+          </Button>
         </div>
 
         {/* Secure Badge */}
@@ -101,20 +127,6 @@ export default function Payment() {
            <ShieldCheck className="w-4 h-4 text-accent" />
            <span>Secure SSL Encryption</span>
         </div>
-
-        <Button
-          onClick={handlePayment}
-          disabled={!method || createMutation.isPending}
-          className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/25 font-display"
-          size="lg"
-        >
-          {createMutation.isPending ? (
-            <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          ) : (
-            <CheckCircle2 className="w-5 h-5 mr-2" />
-          )}
-          {createMutation.isPending ? "Processing..." : `Pay ₹${details.finalAmount}`}
-        </Button>
       </div>
     </Layout>
   );
