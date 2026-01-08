@@ -75,15 +75,35 @@ export default function Success() {
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                transition={{ 
+                  type: "spring", 
+                  stiffness: 260, 
+                  damping: 20,
+                  delay: 0.1
+                }}
                 className="w-24 h-24 bg-accent rounded-full flex items-center justify-center shadow-xl shadow-accent/30 z-10 relative"
               >
                 <Check className="w-12 h-12 text-accent-foreground stroke-[3]" />
               </motion.div>
               <motion.div 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1.5, opacity: 0 }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                initial={{ scale: 1, opacity: 0.5 }}
+                animate={{ scale: 2, opacity: 0 }}
+                transition={{ 
+                  duration: 2, 
+                  repeat: Infinity,
+                  ease: "easeOut" 
+                }}
+                className="absolute inset-0 bg-accent rounded-full -z-0"
+              />
+              <motion.div 
+                initial={{ scale: 1, opacity: 0.3 }}
+                animate={{ scale: 1.8, opacity: 0 }}
+                transition={{ 
+                  duration: 2, 
+                  repeat: Infinity,
+                  ease: "easeOut",
+                  delay: 0.5
+                }}
                 className="absolute inset-0 bg-accent rounded-full -z-0"
               />
             </motion.div>
