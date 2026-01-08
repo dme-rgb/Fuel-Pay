@@ -16,18 +16,20 @@ function AmountDisplay({ target, start, onComplete }: { target: number, start: n
   const [displayValue, setDisplayValue] = useState(start);
 
   useEffect(() => {
-    // Initial delay to show original amount
+    // Show original amount first
+    setDisplayValue(start);
+    
     const timer = setTimeout(() => {
       const controls = animate(start, target, {
-        duration: 1.5,
-        ease: "easeOut",
+        duration: 2,
+        ease: [0.34, 1.56, 0.64, 1], // Custom bouncy ease for smoother feel
         onUpdate: (value) => setDisplayValue(value),
         onComplete: () => {
           if (onComplete) onComplete();
         }
       });
       return () => controls.stop();
-    }, 1000); // 1 second delay to show original amount first
+    }, 800);
     
     return () => clearTimeout(timer);
   }, [target, start, onComplete]);
@@ -178,7 +180,7 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
+              exit={{ opacity: 0 }}
               className="space-y-6"
             >
               <div className="relative overflow-hidden rounded-2xl bg-primary text-primary-foreground p-6 shadow-xl shadow-primary/20">
@@ -208,8 +210,9 @@ export default function Home() {
                   <AnimatePresence>
                     {showSavings && (
                       <motion.div 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
                         className="bg-white/10 rounded-lg p-3 flex items-center justify-between backdrop-blur-sm"
                       >
                         <span className="font-medium text-sm">You Save</span>
