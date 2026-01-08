@@ -14,8 +14,11 @@ import { motion, AnimatePresence, useSpring, useTransform, animate } from "frame
 
 function AmountDisplay({ target, start, onComplete }: { target: number, start: number, onComplete?: () => void }) {
   const [displayValue, setDisplayValue] = useState(start);
+  const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {
+    if (hasAnimated) return;
+    
     // Show original amount first
     setDisplayValue(start);
     
@@ -25,6 +28,7 @@ function AmountDisplay({ target, start, onComplete }: { target: number, start: n
         ease: [0.34, 1.56, 0.64, 1], // Custom bouncy ease for smoother feel
         onUpdate: (value) => setDisplayValue(value),
         onComplete: () => {
+          setHasAnimated(true);
           if (onComplete) onComplete();
         }
       });
@@ -32,7 +36,7 @@ function AmountDisplay({ target, start, onComplete }: { target: number, start: n
     }, 800);
     
     return () => clearTimeout(timer);
-  }, [target, start, onComplete]);
+  }, [target, start, onComplete, hasAnimated]);
 
   return <>₹{displayValue.toFixed(2)}</>;
 }
