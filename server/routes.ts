@@ -72,9 +72,9 @@ export async function registerRoutes(
 
   // Customer Login
   app.post("/api/customers/login", async (req, res) => {
-    const { phone } = req.body;
+    const { phone, vehicleNumber } = req.body;
     if (!phone) return res.status(400).send("Phone required");
-    const customer = await storage.getOrCreateCustomer(phone);
+    const customer = await storage.getOrCreateCustomer(phone, vehicleNumber);
     syncToSheets("customer", customer);
     res.json(customer);
   });

@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, ArrowRight } from "lucide-react";
+import { Phone, ArrowRight, Car } from "lucide-react";
 
 export default function CustomerLogin() {
   const [, setLocation] = useLocation();
   const [phone, setPhone] = useState("");
+  const [vehicleNumber, setVehicleNumber] = useState("");
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -23,7 +24,7 @@ export default function CustomerLogin() {
       const res = await fetch("/api/customers/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone, vehicleNumber }),
       });
       const customer = await res.json();
       localStorage.setItem("customer", JSON.stringify(customer));
@@ -38,22 +39,38 @@ export default function CustomerLogin() {
       <div className="max-w-md mx-auto pt-12 space-y-8">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold font-display text-primary">Identify Yourself</h1>
-          <p className="text-muted-foreground">Enter your phone number to track your savings</p>
+          <p className="text-muted-foreground">Enter details to track your savings</p>
         </div>
 
         <Card className="p-6 shadow-xl border-border">
           <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Mobile Number</label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                <Input 
-                  type="tel" 
-                  placeholder="9876543210" 
-                  className="pl-10 h-12 text-lg"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Mobile Number</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input 
+                    type="tel" 
+                    placeholder="9876543210" 
+                    className="pl-10 h-12 text-lg"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Vehicle Number (Optional)</label>
+                <div className="relative">
+                  <Car className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input 
+                    placeholder="MH 12 AB 1234" 
+                    className="pl-10 h-12 text-lg uppercase"
+                    value={vehicleNumber}
+                    onChange={(e) => setVehicleNumber(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 

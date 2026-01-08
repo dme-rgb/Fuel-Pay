@@ -13,6 +13,7 @@ export const settings = pgTable("settings", {
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
   phone: varchar("phone", { length: 20 }).notNull().unique(),
+  vehicleNumber: varchar("vehicle_number", { length: 20 }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

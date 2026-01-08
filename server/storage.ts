@@ -15,13 +15,14 @@ export interface IStorage {
   getSettings(): Promise<Settings | undefined>;
   updateSettings(settings: InsertSettings): Promise<Settings>;
 
-  getOrCreateCustomer(phone: string): Promise<Customer>;
+  getOrCreateCustomer(phone: string, vehicleNumber?: string): Promise<Customer>;
   getCustomerTransactions(customerId: number): Promise<Transaction[]>;
 
   createTransaction(transaction: InsertTransaction & { customerId?: number }): Promise<Transaction>;
   getTransaction(id: number): Promise<Transaction | undefined>;
   updateTransactionStatus(id: number, status: string, authCode?: string): Promise<Transaction>;
   getTransactions(): Promise<Transaction[]>;
+  getCustomers(): Promise<Customer[]>;
 
   getNextOtp(): Promise<Otp | undefined>;
   markOtpUsed(id: number): Promise<void>;
@@ -54,11 +55,24 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getOrCreateCustomer(phone: string): Promise<Customer> {
+  async getOrCreateCustomer(phone: string, vehicleNumber?: string): Promise<Customer> {
     const [existing] = await db.select().from(customers).where(eq(customers.phone, phone));
-    if (existing) return existing;
-    const [created] = await db.insert(customers).values({ phone }).returning();
+    if (existing) {
+      if (vehicleNumber && existing.vehicleNumber !== vehicleNumber) {
+        const [updated] = await db.update(customers)
+          .set({ vehicleNumber })
+          .where(eq(customers.id, existing.id))
+          .returning();
+        return updated;
+      }
+      return existing;
+    }
+    const [created] = await db.insert(customers).values({ phone, vehicleNumber }).returning();
     return created;
+  }
+
+  async getCustomers(): Promise<Customer[]> {
+    return await db.select().from(customers);
   }
 
   async getCustomerTransactions(customerId: number): Promise<Transaction[]> {
