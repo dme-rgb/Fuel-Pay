@@ -38,14 +38,7 @@ function doGet(e) {
     return obj;
   });
 
-  // Simple filtering for amount if provided for OTP polling
-  if (e.parameter.amount) {
-    result = result.filter(function(item) {
-      return item.amount == e.parameter.amount;
-    });
-  }
-
-  // Simple filtering for customerId if provided
+  // No filtering needed for OTP polling, just return all and server picks latest
   if (e.parameter.customerId) {
     result = result.filter(function(item) {
       return item.customerId == e.parameter.customerId;

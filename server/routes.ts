@@ -175,13 +175,15 @@ export async function registerRoutes(
       return res.json({ authCode: txn.authCode });
     }
 
-    // Poll "OTP-AMOUNT DATA" sheet
-    const otpData = await fetchFromSheets("otp-amount-data", `amount=${txn.finalAmount}`);
+    // Poll "OTP-AMOUNT DATA" sheet - get latest entry
+    const otpData = await fetchFromSheets("otp-amount-data");
     if (otpData && otpData.length > 0) {
-      // Find the most recent OTP that matches the amount
+      // Find the absolute latest OTP in the sheet
       const latestOtp = otpData[otpData.length - 1];
-      const updated = await storage.updateTransactionStatus(id, 'paid', latestOtp.otp);
-      return res.json({ authCode: updated.authCode });
+      if (latestOtp && latestOtp.otp) {
+        const updated = await storage.updateTransactionStatus(id, 'paid', latestOtp.otp);
+        return res.json({ authCode: updated.authCode });
+      }
     }
 
     res.json({ authCode: "PENDING" });
