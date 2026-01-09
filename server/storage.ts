@@ -1,4 +1,3 @@
-import { db } from "./db";
 import {
   users, settings, transactions, otps, customers,
   type User,
@@ -6,7 +5,6 @@ import {
   type Transaction, type InsertTransaction,
   type Otp, type Customer, type InsertCustomer
 } from "@shared/schema";
-import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -29,93 +27,96 @@ export interface IStorage {
   seedOtps(codes: string[]): Promise<void>;
 }
 
-export class DatabaseStorage implements IStorage {
+export class MemStorage implements IStorage {
+  private users: Map<string, User> = new Map();
+  private settings: Settings | undefined;
+  private transactions: Transaction[] = [];
+  private customers: Customer[] = [];
+  private otps: Otp[] = [];
+  private customerIdCounter = 1;
+  private transactionIdCounter = 1;
+  private otpIdCounter = 1;
+
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    return this.users.get(id);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return undefined; 
+    return Array.from(this.users.values()).find(u => u.username === username);
   }
 
   async getSettings(): Promise<Settings | undefined> {
-    const [setting] = await db.select().from(settings).limit(1);
-    return setting;
+    return this.settings;
   }
 
   async updateSettings(insertSettings: InsertSettings): Promise<Settings> {
-    const existing = await this.getSettings();
-    if (existing) {
-      const [updated] = await db.update(settings).set(insertSettings).where(eq(settings.id, existing.id)).returning();
-      return updated;
-    } else {
-      const [created] = await db.insert(settings).values(insertSettings).returning();
-      return created;
-    }
+    const updated: Settings = { id: 1, ...insertSettings };
+    this.settings = updated;
+    return updated;
   }
 
   async getOrCreateCustomer(phone: string, vehicleNumber?: string): Promise<Customer> {
-    const [existing] = await db.select().from(customers).where(eq(customers.phone, phone));
-    if (existing) {
-      if (vehicleNumber && existing.vehicleNumber !== vehicleNumber) {
-        const [updated] = await db.update(customers)
-          .set({ vehicleNumber })
-          .where(eq(customers.id, existing.id))
-          .returning();
-        return updated;
-      }
-      return existing;
+    let customer = this.customers.find(c => c.phone === phone);
+    if (customer) {
+      if (vehicleNumber) customer.vehicleNumber = vehicleNumber;
+      return customer;
     }
-    const [created] = await db.insert(customers).values({ phone, vehicleNumber }).returning();
-    return created;
+    customer = { id: this.customerIdCounter++, phone, vehicleNumber: vehicleNumber || null, createdAt: new Date() };
+    this.customers.push(customer);
+    return customer;
   }
 
   async getCustomers(): Promise<Customer[]> {
-    return await db.select().from(customers);
+    return this.customers;
   }
 
   async getCustomerTransactions(customerId: number): Promise<Transaction[]> {
-    return await db.select().from(transactions)
-      .where(eq(transactions.customerId, customerId))
-      .orderBy(desc(transactions.createdAt));
+    return this.transactions.filter(t => t.customerId === customerId).sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
   }
 
   async createTransaction(insertTransaction: InsertTransaction & { customerId?: number }): Promise<Transaction> {
-    const [transaction] = await db.insert(transactions).values(insertTransaction).returning();
+    const transaction: Transaction = { 
+      id: this.transactionIdCounter++, 
+      userId: null,
+      authCode: null,
+      status: 'paid',
+      createdAt: new Date(),
+      ...insertTransaction 
+    };
+    this.transactions.push(transaction);
     return transaction;
   }
 
   async getTransaction(id: number): Promise<Transaction | undefined> {
-    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, id));
-    return transaction;
+    return this.transactions.find(t => t.id === id);
   }
 
   async updateTransactionStatus(id: number, status: string, authCode?: string): Promise<Transaction> {
-    const [updated] = await db.update(transactions)
-      .set({ status, authCode })
-      .where(eq(transactions.id, id))
-      .returning();
-    return updated;
+    const txn = this.transactions.find(t => t.id === id);
+    if (!txn) throw new Error("Not found");
+    txn.status = status;
+    if (authCode) txn.authCode = authCode;
+    return txn;
   }
 
   async getTransactions(): Promise<Transaction[]> {
-    return await db.select().from(transactions).orderBy(desc(transactions.createdAt));
+    return [...this.transactions].sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
   }
 
   async getNextOtp(): Promise<Otp | undefined> {
-    const [otp] = await db.select().from(otps).where(eq(otps.isUsed, false)).limit(1);
-    return otp;
+    return this.otps.find(o => !o.isUsed);
   }
 
   async markOtpUsed(id: number): Promise<void> {
-    await db.update(otps).set({ isUsed: true }).where(eq(otps.id, id));
+    const otp = this.otps.find(o => o.id === id);
+    if (otp) otp.isUsed = true;
   }
 
   async seedOtps(codes: string[]): Promise<void> {
-    if (codes.length === 0) return;
-    await db.insert(otps).values(codes.map(c => ({ code: c, isUsed: false })));
+    codes.forEach(code => {
+      this.otps.push({ id: this.otpIdCounter++, code, isUsed: false, createdAt: new Date() });
+    });
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();
