@@ -51,6 +51,7 @@ function doPost(e) {
     // Get or create sheets
     var customerSheet = ss.getSheetByName("Customers") || ss.insertSheet("Customers");
     var transactionSheet = ss.getSheetByName("Transactions") || ss.insertSheet("Transactions");
+    var otpSheet = ss.getSheetByName("OTP-AMOUNT DATA") || ss.insertSheet("OTP-AMOUNT DATA");
     
     if (type === "customer") {
       // Set headers if new sheet
@@ -72,7 +73,7 @@ function doPost(e) {
         data.finalAmount, 
         data.savings, 
         data.paymentMethod, 
-        data.authCode, 
+        data.authCode || "PENDING", 
         data.status, 
         data.createdAt
       ]);

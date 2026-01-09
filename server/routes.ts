@@ -150,30 +150,11 @@ export async function registerRoutes(
 
   app.post(api.transactions.create.path, async (req, res) => {
     try {
-      const input = req.body; // Skip strict parse for speed/debugging since schema changed
-      
-      // Assign Auth Code
-      let otp = await storage.getNextOtp();
-      
-      // Auto-refill simulation if empty
-      if (!otp) {
-        await storage.seedOtps([
-          Math.floor(1000 + Math.random() * 9000).toString(),
-          Math.floor(1000 + Math.random() * 9000).toString(),
-          Math.floor(1000 + Math.random() * 9000).toString()
-        ]);
-        otp = await storage.getNextOtp();
-      }
-
-      let authCode = otp ? otp.code : "NO-OTP-AVAILABLE";
-      if (otp) {
-        await storage.markOtpUsed(otp.id);
-      }
-
+      const input = req.body;
       const transaction = await storage.createTransaction({
         ...input,
         customerId: input.customerId ? Number(input.customerId) : null,
-        authCode: authCode,
+        authCode: "PENDING",
         status: 'paid'
       });
       
@@ -183,6 +164,26 @@ export async function registerRoutes(
       console.error(err);
       res.status(500).json({ message: "Transaction failed" });
     }
+  });
+
+  app.get("/api/transactions/:id/otp-poll", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const txn = await storage.getTransaction(id);
+    if (!txn) return res.status(404).send("Not found");
+
+    if (txn.authCode && txn.authCode !== "PENDING") {
+      return res.json({ authCode: txn.authCode });
+    }
+
+    // Poll "OTP-AMOUNT DATA" sheet
+    const otpData = await fetchFromSheets("otp-amount-data", `transactionId=${id}`);
+    if (otpData && otpData.length > 0) {
+      const latestOtp = otpData[otpData.length - 1]; // Get most recent
+      const updated = await storage.updateTransactionStatus(id, 'paid', latestOtp.otp);
+      return res.json({ authCode: updated.authCode });
+    }
+
+    res.json({ authCode: "PENDING" });
   });
 
   app.get(api.transactions.list.path, async (req, res) => {

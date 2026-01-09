@@ -15,13 +15,40 @@ export default function Success() {
   const [attempts, setAttempts] = useState(0);
   const { toast } = useToast();
 
+  const [polling, setPolling] = useState(true);
+
   useEffect(() => {
     const stored = localStorage.getItem("txn_success");
     if (!stored) {
       setLocation("/");
       return;
     }
-    setTxn(JSON.parse(stored));
+    const txnData = JSON.parse(stored);
+    setTxn(txnData);
+
+    // Polling logic for OTP
+    let pollInterval: any;
+    if (txnData.authCode === "PENDING") {
+      pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/transactions/${txnData.id}/otp-poll`);
+          const data = await res.json();
+          if (data.authCode && data.authCode !== "PENDING") {
+            setTxn((prev: any) => {
+              const updated = { ...prev, authCode: data.authCode };
+              localStorage.setItem("txn_success", JSON.stringify(updated));
+              return updated;
+            });
+            setPolling(false);
+            clearInterval(pollInterval);
+          }
+        } catch (err) {
+          console.error("Polling error:", err);
+        }
+      }, 3000); // Poll every 3 seconds
+    } else {
+      setPolling(false);
+    }
 
     // Animation disappears after 60s
     const animTimeout = setTimeout(() => setShowAnimation(false), 60000);
@@ -34,6 +61,7 @@ export default function Success() {
     return () => {
       clearTimeout(animTimeout);
       clearInterval(interval);
+      if (pollInterval) clearInterval(pollInterval);
     };
   }, [setLocation]);
 
@@ -123,9 +151,16 @@ export default function Success() {
           </div>
           <div 
             onClick={copyCode}
-            className="text-4xl font-mono font-bold text-primary tracking-widest cursor-pointer hover:scale-105 transition-transform select-all"
+            className="text-4xl font-mono font-bold text-primary tracking-widest cursor-pointer hover:scale-105 transition-transform select-all flex items-center justify-center gap-3"
           >
-            {txn.authCode || "PENDING"}
+            {txn.authCode === "PENDING" ? (
+              <div className="flex items-center gap-2 text-2xl animate-pulse text-muted-foreground">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                WAITING...
+              </div>
+            ) : (
+              txn.authCode
+            )}
           </div>
           
           <div className="mt-6 pt-4 border-t border-dashed border-border space-y-2">
