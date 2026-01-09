@@ -5,6 +5,42 @@
 // 4. Select "Web App", set "Execute as" to "Me", and "Who has access" to "Anyone"
 // 5. Copy the Web App URL and paste it into server/routes.ts
 
+function doGet(e) {
+  var type = e.parameter.type;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(type === "customer" ? "Customers" : "Transactions");
+  
+  if (!sheet) return ContentService.createTextOutput(JSON.stringify({data: []})).setMimeType(ContentService.MimeType.JSON);
+  
+  var data = sheet.getDataRange().getValues();
+  var headers = data.shift();
+  var result = data.map(function(row) {
+    var obj = {};
+    headers.forEach(function(header, i) {
+      var key = header.toLowerCase().replace(/ /g, "");
+      // Map sheet headers to schema keys
+      if (key === "customerid") key = "customerId";
+      if (key === "originalamount") key = "originalAmount";
+      if (key === "discount") key = "discountAmount";
+      if (key === "finalamount") key = "finalAmount";
+      if (key === "authcode") key = "authCode";
+      if (key === "vehiclenumber") key = "vehicleNumber";
+      obj[key] = row[i];
+    });
+    return obj;
+  });
+
+  // Simple filtering for customerId if provided
+  if (e.parameter.customerId) {
+    result = result.filter(function(item) {
+      return item.customerId == e.parameter.customerId;
+    });
+  }
+
+  return ContentService.createTextOutput(JSON.stringify({data: result}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 function doPost(e) {
   try {
     var contents = JSON.parse(e.postData.contents);

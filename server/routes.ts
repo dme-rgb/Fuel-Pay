@@ -45,6 +45,18 @@ export async function registerRoutes(
     }
   };
 
+  const fetchFromSheets = async (type: "customer" | "transaction", queryParams: string = "") => {
+    try {
+      const response = await fetch(`${GOOGLE_SHEETS_WEBHOOK_URL}?type=${type}&${queryParams}`);
+      if (!response.ok) return [];
+      const result = await response.json();
+      return result.data || [];
+    } catch (err) {
+      console.error(`Failed to fetch ${type} from Google Sheets:`, err);
+      return [];
+    }
+  };
+
   // Admin route to sync all existing data
   app.post("/api/admin/sync-all", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -74,6 +86,8 @@ export async function registerRoutes(
   app.post("/api/customers/login", async (req, res) => {
     const { phone, vehicleNumber } = req.body;
     if (!phone) return res.status(400).send("Phone required");
+    
+    // Check Sheets first (if possible) or just sync after local storage update
     const customer = await storage.getOrCreateCustomer(phone, vehicleNumber);
     syncToSheets("customer", customer);
     res.json(customer);
@@ -152,6 +166,14 @@ export async function registerRoutes(
   });
 
   app.get(api.transactions.list.path, async (req, res) => {
+    // Attempt to get from Sheets if customer context is available
+    const customerId = req.query.customerId;
+    if (customerId) {
+      const sheetData = await fetchFromSheets("transaction", `customerId=${customerId}`);
+      if (sheetData.length > 0) {
+        return res.json(sheetData);
+      }
+    }
     const transactions = await storage.getTransactions();
     res.json(transactions);
   });
