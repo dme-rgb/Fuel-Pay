@@ -48,7 +48,7 @@ export async function registerRoutes(
     }
   };
 
-  const fetchFromSheets = async (type: "customer" | "transaction", queryParams: string = "") => {
+  const fetchFromSheets = async (type: "customer" | "transaction" | "otp-amount-data", queryParams: string = "") => {
     try {
       console.log(`Fetching ${type} from Google Sheets... query: ${queryParams}`);
       const response = await fetch(`${GOOGLE_SHEETS_WEBHOOK_URL}?type=${type}&${queryParams}`);

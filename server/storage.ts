@@ -75,12 +75,6 @@ export class MemStorage implements IStorage {
     return this.customers;
   }
 
-  async setCustomers(customers: Customer[]) {
-    this.customers = customers;
-    const maxId = customers.length > 0 ? Math.max(...customers.map(c => Number(c.id))) : 0;
-    this.customerIdCounter = maxId + 1;
-  }
-
   async getCustomerTransactions(customerId: number): Promise<Transaction[]> {
     return this.transactions.filter(t => t.customerId === customerId).sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
   }
@@ -101,6 +95,12 @@ export class MemStorage implements IStorage {
     };
     this.transactions.push(transaction);
     return transaction;
+  }
+
+  async setCustomers(customers: Customer[]) {
+    this.customers = customers;
+    const maxId = customers.length > 0 ? Math.max(...customers.map(c => Number(c.id))) : 0;
+    this.customerIdCounter = maxId + 1;
   }
 
   async getTransaction(id: number): Promise<Transaction | undefined> {

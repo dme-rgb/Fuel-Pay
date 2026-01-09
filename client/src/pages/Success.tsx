@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Home, Copy, Share2, RefreshCw } from "lucide-react";
+import { Check, Home, Copy, Share2, RefreshCw, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
