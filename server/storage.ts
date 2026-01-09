@@ -65,21 +65,20 @@ export class MemStorage implements IStorage {
       if (vehicleNumber) customer.vehicleNumber = vehicleNumber;
       return customer;
     }
-    // For now, continue with internal ID, but server/routes.ts will handle Sheets lookup
+    // Create new customer with internal ID
     customer = { id: this.customerIdCounter++, phone, vehicleNumber: vehicleNumber || null, createdAt: new Date() };
     this.customers.push(customer);
     return customer;
   }
 
-  async setCustomers(customers: Customer[]) {
-    this.customers = customers;
-    // Keep counter in sync
-    const maxId = Math.max(0, ...customers.map(c => c.id));
-    this.customerIdCounter = maxId + 1;
-  }
-
   async getCustomers(): Promise<Customer[]> {
     return this.customers;
+  }
+
+  async setCustomers(customers: Customer[]) {
+    this.customers = customers;
+    const maxId = customers.length > 0 ? Math.max(...customers.map(c => Number(c.id))) : 0;
+    this.customerIdCounter = maxId + 1;
   }
 
   async getCustomerTransactions(customerId: number): Promise<Transaction[]> {

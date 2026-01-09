@@ -35,11 +35,14 @@ export async function registerRoutes(
 
   const syncToSheets = async (type: "customer" | "transaction", data: any) => {
     try {
-      await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+      console.log(`Syncing ${type} to Google Sheets...`, data);
+      const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type, data, timestamp: new Date().toISOString() }),
       });
+      const result = await response.json();
+      console.log(`Sync result for ${type}:`, result);
     } catch (err) {
       console.error(`Failed to sync ${type} to Google Sheets:`, err);
     }
@@ -47,9 +50,14 @@ export async function registerRoutes(
 
   const fetchFromSheets = async (type: "customer" | "transaction", queryParams: string = "") => {
     try {
+      console.log(`Fetching ${type} from Google Sheets... query: ${queryParams}`);
       const response = await fetch(`${GOOGLE_SHEETS_WEBHOOK_URL}?type=${type}&${queryParams}`);
-      if (!response.ok) return [];
+      if (!response.ok) {
+        console.error(`Sheets fetch failed: ${response.status} ${response.statusText}`);
+        return [];
+      }
       const result = await response.json();
+      console.log(`Fetch result for ${type}:`, result);
       return result.data || [];
     } catch (err) {
       console.error(`Failed to fetch ${type} from Google Sheets:`, err);
