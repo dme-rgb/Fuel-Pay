@@ -87,7 +87,18 @@ export async function registerRoutes(
     const { phone, vehicleNumber } = req.body;
     if (!phone) return res.status(400).send("Phone required");
     
-    // Check Sheets first (if possible) or just sync after local storage update
+    // 1. Check Google Sheets first
+    const sheetCustomers = await fetchFromSheets("customer", `phone=${phone}`);
+    if (sheetCustomers && sheetCustomers.length > 0) {
+      const existing = sheetCustomers[0];
+      // Update local memory to stay in sync
+      const customer = await storage.getOrCreateCustomer(existing.phone, vehicleNumber || existing.vehicleNumber);
+      // Ensure local ID matches Sheet ID for consistency
+      customer.id = Number(existing.id);
+      return res.json(customer);
+    }
+
+    // 2. If not in Sheets, create new locally and sync to Sheets
     const customer = await storage.getOrCreateCustomer(phone, vehicleNumber);
     syncToSheets("customer", customer);
     res.json(customer);
