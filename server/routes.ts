@@ -31,7 +31,7 @@ export async function registerRoutes(
     res.json(settings);
   });
 
-  const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/FAKE_LINK_REPLACE_ME/exec";
+  const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxuSJnbjx9PlHqq-Gr7yffrieCyTEHICqxM-fOqIHtW_LpNIl2-ay1EFCzAUMV1sewa/exec";
 
   const syncToSheets = async (type: "customer" | "transaction", data: any) => {
     try {
