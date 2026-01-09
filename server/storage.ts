@@ -82,8 +82,8 @@ export class MemStorage implements IStorage {
     const transaction: Transaction = { 
       id: this.transactionIdCounter++, 
       userId: null,
-      authCode: null,
-      status: 'paid',
+      authCode: insertTransaction.authCode || null,
+      status: insertTransaction.status || 'paid',
       createdAt: new Date(),
       customerId: insertTransaction.customerId ?? null,
       paymentMethod: insertTransaction.paymentMethod ?? null,
