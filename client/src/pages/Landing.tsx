@@ -187,7 +187,9 @@ export default function Home() {
               exit={{ opacity: 0 }}
               className="space-y-6"
             >
-              <div className="relative overflow-hidden rounded-2xl bg-primary text-primary-foreground p-6 shadow-xl shadow-primary/20">
+              <div className="relative overflow-hidden rounded-2xl bg-primary text-primary-foreground p-5  border border-black/40 shadow-[0_20px_30px_rgba(0,0,0,0.15),_0_4px_10px_rgba(0,0,0,0.08)]
+                hover:shadow-[0_16px_45px_rgba(0,0,0,0.18)]
+                transition-all duration-300">
                 <div className="absolute top-0 right-0 p-8 opacity-10">
                    <Droplets className="w-32 h-32" />
                 </div>
@@ -231,7 +233,11 @@ export default function Home() {
                 <Button
                   onClick={handleProceed}
                   size="lg"
-                  className="w-full h-16 text-xl rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground font-display shadow-xl shadow-accent/20 animate-pulse"
+                  className="w-full h-16 text-xl rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground font-display  /* 3D depth */
+                  shadow-[0_8px_0_rgba(0,0,0,0.35),_0_18px_35px_rgba(0,0,0,0.25)] shadow-accent/10 
+                  hover:translate-y-[1px]
+                    hover:shadow-[0_6px_0_rgba(0,0,0,0.35),_0_14px_30px_rgba(0,0,0,0.25)]
+                  animate-pulse"
                 >
                   Proceed to Payment
                   <ArrowRight className="w-6 h-6 ml-2" />
