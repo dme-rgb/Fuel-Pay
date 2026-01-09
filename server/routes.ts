@@ -177,11 +177,17 @@ export async function registerRoutes(
 
     // Poll "OTP-AMOUNT DATA" sheet - get latest entry
     const otpData = await fetchFromSheets("otp-amount-data");
+    console.log("Raw OTP Data from Sheets:", JSON.stringify(otpData, null, 2));
+    
     if (otpData && otpData.length > 0) {
       // Find the absolute latest OTP in the sheet
       const latestOtp = otpData[otpData.length - 1];
-      if (latestOtp && latestOtp.otp) {
-        const updated = await storage.updateTransactionStatus(id, 'paid', latestOtp.otp);
+      console.log("Latest OTP identified:", latestOtp);
+      
+      if (latestOtp && (latestOtp.otp || latestOtp.b)) {
+        const code = latestOtp.otp || latestOtp.b;
+        console.log("Updating transaction with code:", code);
+        const updated = await storage.updateTransactionStatus(id, 'paid', String(code));
         return res.json({ authCode: updated.authCode });
       }
     }
