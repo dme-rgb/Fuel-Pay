@@ -42,7 +42,7 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(u => u.username === username);
+    return Array.from(this.users.values()).find(u => (u as any).username === username);
   }
 
   async getSettings(): Promise<Settings | undefined> {
@@ -50,7 +50,11 @@ export class MemStorage implements IStorage {
   }
 
   async updateSettings(insertSettings: InsertSettings): Promise<Settings> {
-    const updated: Settings = { id: 1, ...insertSettings };
+    const updated: Settings = { 
+      id: 1, 
+      fuelPrice: insertSettings.fuelPrice ?? "100.00", 
+      discountPerLiter: insertSettings.discountPerLiter ?? "0.70" 
+    };
     this.settings = updated;
     return updated;
   }
@@ -81,7 +85,12 @@ export class MemStorage implements IStorage {
       authCode: null,
       status: 'paid',
       createdAt: new Date(),
-      ...insertTransaction 
+      customerId: insertTransaction.customerId ?? null,
+      paymentMethod: insertTransaction.paymentMethod ?? null,
+      originalAmount: insertTransaction.originalAmount,
+      discountAmount: insertTransaction.discountAmount,
+      finalAmount: insertTransaction.finalAmount,
+      savings: insertTransaction.savings,
     };
     this.transactions.push(transaction);
     return transaction;
