@@ -8,7 +8,7 @@
 function doGet(e) {
   var type = e.parameter.type;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(type === "customer" ? "Customers" : "Transactions");
+  var sheet = ss.getSheetByName(type === "customer" ? "Customers" : (type === "otp-amount-data" ? "OTP-AMOUNT DATA" : "Transactions"));
   
   if (!sheet) return ContentService.createTextOutput(JSON.stringify({data: []})).setMimeType(ContentService.MimeType.JSON);
   
@@ -25,10 +25,25 @@ function doGet(e) {
       if (key === "finalamount") key = "finalAmount";
       if (key === "authcode") key = "authCode";
       if (key === "vehiclenumber") key = "vehicleNumber";
+      
+      // Special mapping for OTP-AMOUNT DATA (A: Timestamp, B: OTP, C: Amount)
+      if (type === "otp-amount-data") {
+        if (i === 0) key = "timestamp";
+        if (i === 1) key = "otp";
+        if (i === 2) key = "amount";
+      }
+      
       obj[key] = row[i];
     });
     return obj;
   });
+
+  // Simple filtering for amount if provided for OTP polling
+  if (e.parameter.amount) {
+    result = result.filter(function(item) {
+      return item.amount == e.parameter.amount;
+    });
+  }
 
   // Simple filtering for customerId if provided
   if (e.parameter.customerId) {

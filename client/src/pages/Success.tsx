@@ -154,9 +154,14 @@ export default function Success() {
             className="text-4xl font-mono font-bold text-primary tracking-widest cursor-pointer hover:scale-105 transition-transform select-all flex items-center justify-center gap-3"
           >
             {txn.authCode === "PENDING" ? (
-              <div className="flex items-center gap-2 text-2xl animate-pulse text-muted-foreground">
-                <Loader2 className="w-6 h-6 animate-spin" />
-                WAITING...
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex items-center gap-2 text-2xl animate-pulse text-accent">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  WAITING...
+                </div>
+                <div className="text-xs font-sans font-normal text-muted-foreground animate-bounce">
+                  Syncing with station...
+                </div>
               </div>
             ) : (
               txn.authCode

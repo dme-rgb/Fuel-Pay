@@ -176,9 +176,10 @@ export async function registerRoutes(
     }
 
     // Poll "OTP-AMOUNT DATA" sheet
-    const otpData = await fetchFromSheets("otp-amount-data", `transactionId=${id}`);
+    const otpData = await fetchFromSheets("otp-amount-data", `amount=${txn.finalAmount}`);
     if (otpData && otpData.length > 0) {
-      const latestOtp = otpData[otpData.length - 1]; // Get most recent
+      // Find the most recent OTP that matches the amount
+      const latestOtp = otpData[otpData.length - 1];
       const updated = await storage.updateTransactionStatus(id, 'paid', latestOtp.otp);
       return res.json({ authCode: updated.authCode });
     }
