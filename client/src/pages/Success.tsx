@@ -131,7 +131,7 @@ export default function Success() {
           <div className="mt-6 pt-4 border-t border-dashed border-border space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Original Amount</span>
-              <span className="font-medium text-primary line-through opacity-50">₹{txn.originalAmount}</span>
+              <span className="font-medium text-primary opacity-50">₹{txn.originalAmount}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-accent font-medium">Discount</span>
@@ -139,7 +139,14 @@ export default function Success() {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Convenience Fee</span>
-              <span className="font-medium text-primary">₹0.00</span>
+              <span className="flex items-center gap-2">
+                <span className="font-medium text-gray-400 line-through">
+                  ₹5.00
+                </span>
+                <span className="font-medium text-primary">
+                  ₹0.00
+                </span>
+              </span>
             </div>
             <div className="flex justify-between text-sm pt-2 border-t border-border/50">
               <span className="font-bold text-primary">Total Paid</span>
@@ -157,7 +164,7 @@ export default function Success() {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="bg-accent/10 text-accent-foreground px-4 py-2 rounded-full font-bold text-sm"
+          className="bg-accent/10 text-green-600 px-4 py-2 rounded-full font-bold text-sm"
         >
           You saved ₹{txn.savings} on this fill!
         </motion.div>

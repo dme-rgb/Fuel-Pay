@@ -153,6 +153,7 @@ export async function registerRoutes(
 
       const transaction = await storage.createTransaction({
         ...input,
+        customerId: input.customerId ? Number(input.customerId) : null,
         authCode: authCode,
         status: 'paid'
       });
