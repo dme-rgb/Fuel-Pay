@@ -52,20 +52,28 @@ export async function registerRoutes(
       console.log(`Syncing ${type} to Google Sheets...`, data);
       const istTimestamp = formatTimestamp(new Date());
       
-      // Based on the user's screenshot, the column header is "Date" (capital D)
-      // and it seems to have stopped populating when we scrubbed technical fields.
-      const syncData = { 
-        ...data,
-        "Date": istTimestamp, // Match exact capitalization from screenshot
-        "date": istTimestamp, // Fallback
-        "timestamp": istTimestamp 
-      };
+      // CREATE A COMPLETELY CLEAN DATA OBJECT
+      // We will only include the fields we want to sync
+      let syncData: any = {};
       
-      // We must NOT delete fields if they are the source for the sheet mapping
-      // but we should ensure the technical 'createdAt' doesn't override 'Date'
-      if (syncData.createdAt) {
-        delete syncData.createdAt;
+      if (type === "transaction") {
+        syncData = {
+          "ID": data.id,
+          "Customer ID": data.customerId,
+          "Original Amount": data.originalAmount,
+          "Discount": data.discountAmount,
+          "Final Amount": data.finalAmount,
+          "Savings": data.savings,
+          "Method": data.paymentMethod,
+          "Auth Code": data.authCode,
+          "Status": data.status,
+          "Date": istTimestamp // FORCING THE CAPITALIZED "Date" FROM SCREENSHOT
+        };
+      } else {
+        syncData = { ...data };
       }
+
+      console.log(`Cleaned sync data for ${type}:`, syncData);
 
       const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
         method: "POST",
