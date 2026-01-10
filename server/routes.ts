@@ -33,13 +33,25 @@ export async function registerRoutes(
 
   const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxuSJnbjx9PlHqq-Gr7yffrieCyTEHICqxM-fOqIHtW_LpNIl2-ay1EFCzAUMV1sewa/exec";
 
+  const formatTimestamp = (date: Date) => {
+    const d = new Date(date);
+    const month = d.getMonth() + 1;
+    const day = d.getDate();
+    const year = d.getFullYear();
+    const hours = d.getHours();
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const seconds = d.getSeconds().toString().padStart(2, '0');
+    return `${month}/${day}/${year} ${hours}:${minutes}:${seconds}`;
+  };
+
   const syncToSheets = async (type: "customer" | "transaction", data: any) => {
     try {
       console.log(`Syncing ${type} to Google Sheets...`, data);
+      const timestamp = formatTimestamp(new Date());
       const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, data, timestamp: new Date().toISOString() }),
+        body: JSON.stringify({ type, data, timestamp }),
       });
       const result = await response.json();
       console.log(`Sync result for ${type}:`, result);
