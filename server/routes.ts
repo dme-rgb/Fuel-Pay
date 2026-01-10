@@ -50,16 +50,23 @@ export async function registerRoutes(
   const syncToSheets = async (type: "customer" | "transaction", data: any) => {
     try {
       console.log(`Syncing ${type} to Google Sheets...`, data);
-      const timestamp = formatTimestamp(new Date());
-      // Override the date in the data if it's a transaction
-      const syncData = { ...data };
-      if (type === "transaction" && syncData.date) {
-        syncData.date = timestamp;
-      }
+      const istTimestamp = formatTimestamp(new Date());
+      
+      // Deep clone and override ALL date fields with IST
+      const syncData = { 
+        ...data,
+        date: type === "transaction" ? istTimestamp : data.date,
+        timestamp: istTimestamp 
+      };
+
       const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, data: syncData, timestamp }),
+        body: JSON.stringify({ 
+          type, 
+          data: syncData, 
+          timestamp: istTimestamp // Redundant but safe
+        }),
       });
       const result = await response.json();
       console.log(`Sync result for ${type}:`, result);
