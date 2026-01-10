@@ -34,14 +34,17 @@ export async function registerRoutes(
   const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxuSJnbjx9PlHqq-Gr7yffrieCyTEHICqxM-fOqIHtW_LpNIl2-ay1EFCzAUMV1sewa/exec";
 
   const formatTimestamp = (date: Date) => {
-    const d = new Date(date);
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
-    const year = d.getFullYear();
-    const hours = d.getHours();
-    const minutes = d.getMinutes().toString().padStart(2, '0');
-    const seconds = d.getSeconds().toString().padStart(2, '0');
-    return `${month}/${day}/${year} ${hours}:${minutes}:${seconds}`;
+    // Format to Indian Standard Time (IST)
+    return date.toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      hour12: false,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric'
+    }).replace(/,/g, '');
   };
 
   const syncToSheets = async (type: "customer" | "transaction", data: any) => {

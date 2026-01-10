@@ -29,8 +29,8 @@ function doGet(e) {
       // Special mapping for OTP-AMOUNT DATA (A: Timestamp, B: OTP, C: Amount)
       if (type === "otp-amount-data") {
         if (i === 0) key = "timestamp";
-        if (i === 1) key = "otp";
-        if (i === 2) key = "amount";
+        if (i === 2) key = "otp";
+        if (i === 3) key = "amount";
       }
       
       obj[key] = row[i];
