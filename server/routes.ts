@@ -52,20 +52,25 @@ export async function registerRoutes(
       console.log(`Syncing ${type} to Google Sheets...`, data);
       const istTimestamp = formatTimestamp(new Date());
       
-      // Deep clone and override ALL date fields with IST
-      const syncData = { 
-        ...data,
-        date: type === "transaction" ? istTimestamp : data.date,
-        timestamp: istTimestamp 
-      };
+      // CRITICAL: Clean up ANY ISO dates from the object
+      // Some ORMs/Libraries automatically add createdAt or date as Date objects
+      // which serialize to ISO strings. We must manually remove them.
+      const cleanData = { ...data };
+      
+      // Delete technical fields that often hold ISO strings
+      delete cleanData.createdAt;
+      delete cleanData.updatedAt;
+      
+      // Override or set the human-readable date
+      cleanData.date = istTimestamp;
 
       const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           type, 
-          data: syncData, 
-          timestamp: istTimestamp // Redundant but safe
+          data: cleanData, 
+          timestamp: istTimestamp 
         }),
       });
       const result = await response.json();
