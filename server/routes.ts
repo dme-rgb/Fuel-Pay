@@ -53,12 +53,13 @@ export async function registerRoutes(
       const istTimestamp = formatTimestamp(new Date());
       
       // We must match the EXACT key names the sheet expects
-      // If the sheet uses "timestamp" or "date" as a column header, 
+      // If the sheet uses "timestamp" or "Date" (case sensitive), 
       // it must be present in the data object.
       const syncData = { 
         ...data,
         timestamp: istTimestamp,
-        date: istTimestamp
+        date: istTimestamp, // Common mapping
+        Date: istTimestamp  // Sometimes capitalized in sheets
       };
       
       // Some technical fields might interfere with sheet mapping
