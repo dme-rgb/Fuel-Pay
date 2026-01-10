@@ -52,19 +52,20 @@ export async function registerRoutes(
       console.log(`Syncing ${type} to Google Sheets...`, data);
       const istTimestamp = formatTimestamp(new Date());
       
-      // We must match the EXACT key names the sheet expects
-      // If the sheet uses "timestamp" or "Date" (case sensitive), 
-      // it must be present in the data object.
+      // Based on the user's screenshot, the column header is "Date" (capital D)
+      // and it seems to have stopped populating when we scrubbed technical fields.
       const syncData = { 
         ...data,
-        timestamp: istTimestamp,
-        date: istTimestamp, // Common mapping
-        Date: istTimestamp  // Sometimes capitalized in sheets
+        "Date": istTimestamp, // Match exact capitalization from screenshot
+        "date": istTimestamp, // Fallback
+        "timestamp": istTimestamp 
       };
       
-      // Some technical fields might interfere with sheet mapping
-      delete syncData.createdAt;
-      delete syncData.updatedAt;
+      // We must NOT delete fields if they are the source for the sheet mapping
+      // but we should ensure the technical 'createdAt' doesn't override 'Date'
+      if (syncData.createdAt) {
+        delete syncData.createdAt;
+      }
 
       const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
         method: "POST",
