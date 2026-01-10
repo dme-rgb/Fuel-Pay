@@ -33,56 +33,13 @@ export async function registerRoutes(
 
   const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxuSJnbjx9PlHqq-Gr7yffrieCyTEHICqxM-fOqIHtW_LpNIl2-ay1EFCzAUMV1sewa/exec";
 
-  const formatTimestamp = (date: Date) => {
-    // Format to Indian Standard Time (IST)
-    return date.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      hour12: false,
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric'
-    }).replace(/,/g, '');
-  };
-
   const syncToSheets = async (type: "customer" | "transaction", data: any) => {
     try {
       console.log(`Syncing ${type} to Google Sheets...`, data);
-      const istTimestamp = formatTimestamp(new Date());
-      
-      // CREATE A COMPLETELY CLEAN DATA OBJECT
-      // We will only include the fields we want to sync
-      let syncData: any = {};
-      
-      if (type === "transaction") {
-        syncData = {
-          "ID": data.id,
-          "Customer ID": data.customerId,
-          "Original Amount": data.originalAmount,
-          "Discount": data.discountAmount,
-          "Final Amount": data.finalAmount,
-          "Savings": data.savings,
-          "Method": data.paymentMethod,
-          "Auth Code": data.authCode,
-          "Status": data.status,
-          "Date": istTimestamp // FORCING THE CAPITALIZED "Date" FROM SCREENSHOT
-        };
-      } else {
-        syncData = { ...data };
-      }
-
-      console.log(`Cleaned sync data for ${type}:`, syncData);
-
       const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          type, 
-          data: syncData, 
-          timestamp: istTimestamp 
-        }),
+        body: JSON.stringify({ type, data, timestamp: new Date().toISOString() }),
       });
       const result = await response.json();
       console.log(`Sync result for ${type}:`, result);
