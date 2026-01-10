@@ -48,7 +48,10 @@ export async function registerRoutes(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           type, 
-          data, 
+          data: {
+            ...data,
+            istTimestamp: istTimestamp
+          }, 
           timestamp: now.toISOString(),
           istTimestamp: istTimestamp 
         }),
