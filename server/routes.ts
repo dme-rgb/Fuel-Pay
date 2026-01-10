@@ -36,10 +36,22 @@ export async function registerRoutes(
   const syncToSheets = async (type: "customer" | "transaction", data: any) => {
     try {
       console.log(`Syncing ${type} to Google Sheets...`, data);
+      
+      // Calculate IST Timestamp
+      const now = new Date();
+      const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
+      const istTime = new Date(now.getTime() + istOffset);
+      const istTimestamp = istTime.toISOString().replace('T', ' ').substring(0, 19);
+
       const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, data, timestamp: new Date().toISOString() }),
+        body: JSON.stringify({ 
+          type, 
+          data, 
+          timestamp: now.toISOString(),
+          istTimestamp: istTimestamp 
+        }),
       });
       const result = await response.json();
       console.log(`Sync result for ${type}:`, result);
