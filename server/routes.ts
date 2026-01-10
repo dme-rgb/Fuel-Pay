@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./replit_integrations/auth";
+import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
@@ -36,7 +36,7 @@ export async function registerRoutes(
   const syncToSheets = async (type: "customer" | "transaction", data: any) => {
     try {
       console.log(`Syncing ${type} to Google Sheets...`, data);
-      
+
       // Calculate IST Timestamp
       const now = new Date();
       const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
@@ -46,14 +46,14 @@ export async function registerRoutes(
       const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          type, 
+        body: JSON.stringify({
+          type,
           data: {
             ...data,
             istTimestamp: istTimestamp
-          }, 
+          },
           timestamp: now.toISOString(),
-          istTimestamp: istTimestamp 
+          istTimestamp: istTimestamp
         }),
       });
       const result = await response.json();
@@ -83,21 +83,21 @@ export async function registerRoutes(
   // Admin route to sync all existing data
   app.post("/api/admin/sync-all", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     try {
       const customers = await storage.getCustomers();
       const transactions = await storage.getTransactions();
-      
+
       // Sync customers first
       for (const customer of customers) {
         await syncToSheets("customer", customer);
       }
-      
+
       // Sync transactions
       for (const transaction of transactions) {
         await syncToSheets("transaction", transaction);
       }
-      
+
       res.json({ message: "Sync initiated for all records" });
     } catch (err) {
       console.error("Manual sync failed:", err);
@@ -109,7 +109,7 @@ export async function registerRoutes(
   app.post("/api/customers/login", async (req, res) => {
     const { phone, vehicleNumber } = req.body;
     if (!phone) return res.status(400).send("Phone required");
-    
+
     // 1. Check Google Sheets first
     const sheetCustomers = await fetchFromSheets("customer", `phone=${phone}`);
     if (sheetCustomers && sheetCustomers.length > 0) {
@@ -136,16 +136,16 @@ export async function registerRoutes(
   app.post(api.transactions.calculate.path, async (req, res) => {
     const { amount } = req.body;
     const settings = await storage.getSettings();
-    
+
     if (!settings) {
-        return res.status(500).json({ message: "Settings not initialized" });
+      return res.status(500).json({ message: "Settings not initialized" });
     }
 
     const fuelPrice = parseFloat(settings.fuelPrice);
     const discountPerLiter = parseFloat(settings.discountPerLiter);
 
     if (fuelPrice <= 0) {
-         return res.status(400).json({ message: "Invalid fuel price" });
+      return res.status(400).json({ message: "Invalid fuel price" });
     }
 
     const liters = amount / fuelPrice;
@@ -172,7 +172,7 @@ export async function registerRoutes(
         authCode: "PENDING",
         status: 'paid'
       });
-      
+
       syncToSheets("transaction", transaction);
       res.status(201).json(transaction);
     } catch (err) {
@@ -193,12 +193,12 @@ export async function registerRoutes(
     // Poll "OTP-AMOUNT DATA" sheet - get latest entry
     const otpData = await fetchFromSheets("otp-amount-data");
     console.log("Raw OTP Data from Sheets:", JSON.stringify(otpData, null, 2));
-    
+
     if (otpData && otpData.length > 0) {
       // Find the absolute latest OTP in the sheet
       const latestOtp = otpData[otpData.length - 1];
       console.log("Latest OTP identified:", latestOtp);
-      
+
       if (latestOtp && (latestOtp.otp || latestOtp.b)) {
         const code = latestOtp.otp || latestOtp.b;
         console.log("Updating transaction with code:", code);
@@ -222,15 +222,15 @@ export async function registerRoutes(
     const transactions = await storage.getTransactions();
     res.json(transactions);
   });
-  
+
   app.post(api.otps.refresh.path, async (req, res) => {
-      // Logic to re-fetch or generate OTPs
-      // In production, this would trigger a Google Sheet sync
-      await storage.seedOtps([
-          Math.floor(1000 + Math.random() * 9000).toString(),
-          Math.floor(1000 + Math.random() * 9000).toString()
-      ]);
-      res.json({ message: "OTPs refreshed" });
+    // Logic to re-fetch or generate OTPs
+    // In production, this would trigger a Google Sheet sync
+    await storage.seedOtps([
+      Math.floor(1000 + Math.random() * 9000).toString(),
+      Math.floor(1000 + Math.random() * 9000).toString()
+    ]);
+    res.json({ message: "OTPs refreshed" });
   });
 
   return httpServer;

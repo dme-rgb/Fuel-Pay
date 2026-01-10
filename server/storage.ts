@@ -1,6 +1,10 @@
+import session from "express-session";
+import createMemoryStore from "memorystore";
+const MemoryStore = createMemoryStore(session);
+
 import {
   users, settings, transactions, otps, customers,
-  type User,
+  type User, type InsertUser,
   type Settings, type InsertSettings,
   type Transaction, type InsertTransaction,
   type Otp, type Customer, type InsertCustomer
@@ -9,6 +13,8 @@ import {
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  sessionStore: session.Store;
 
   getSettings(): Promise<Settings | undefined>;
   updateSettings(settings: InsertSettings): Promise<Settings>;
@@ -29,6 +35,7 @@ export interface IStorage {
 
 export class MemStorage implements IStorage {
   private users: Map<string, User> = new Map();
+  sessionStore: session.Store;
   private settings: Settings | undefined;
   private transactions: Transaction[] = [];
   private customers: Customer[] = [];
@@ -37,12 +44,25 @@ export class MemStorage implements IStorage {
   private transactionIdCounter = 1;
   private otpIdCounter = 1;
 
+  constructor() {
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000,
+    });
+  }
+
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(u => (u as any).username === username);
+    return Array.from(this.users.values()).find(u => u.username === username);
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.users.size + 1;
+    const user: User = { ...insertUser, id, createdAt: new Date() };
+    this.users.set(id.toString(), user);
+    return user;
   }
 
   async getSettings(): Promise<Settings | undefined> {
@@ -50,10 +70,10 @@ export class MemStorage implements IStorage {
   }
 
   async updateSettings(insertSettings: InsertSettings): Promise<Settings> {
-    const updated: Settings = { 
-      id: 1, 
-      fuelPrice: insertSettings.fuelPrice ?? "100.00", 
-      discountPerLiter: insertSettings.discountPerLiter ?? "0.70" 
+    const updated: Settings = {
+      id: 1,
+      fuelPrice: insertSettings.fuelPrice ?? "100.00",
+      discountPerLiter: insertSettings.discountPerLiter ?? "0.70"
     };
     this.settings = updated;
     return updated;
@@ -80,8 +100,8 @@ export class MemStorage implements IStorage {
   }
 
   async createTransaction(insertTransaction: InsertTransaction & { customerId?: number, authCode?: string | null, status?: string }): Promise<Transaction> {
-    const transaction: Transaction = { 
-      id: this.transactionIdCounter++, 
+    const transaction: Transaction = {
+      id: this.transactionIdCounter++,
       userId: null,
       authCode: insertTransaction.authCode || null,
       status: insertTransaction.status || 'paid',

@@ -1,13 +1,18 @@
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { useEffect } from "react";
-import { LockKeyhole } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LockKeyhole, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Login() {
-  const { user } = useAuth();
+  const { user, loginMutation } = useAuth();
   const [, setLocation] = useLocation();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -15,36 +20,73 @@ export default function Login() {
     }
   }, [user, setLocation]);
 
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    loginMutation.mutate({ username, password });
   };
 
   return (
     <Layout showNav={false}>
-      <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-8 animate-enter">
+      <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center min-h-[80vh] w-full max-w-sm mx-auto space-y-8 animate-enter px-4">
         <div className="bg-primary/5 p-6 rounded-full">
-           <LockKeyhole className="w-12 h-12 text-primary" />
+          <LockKeyhole className="w-12 h-12 text-primary" />
         </div>
-        
+
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-display font-bold">Admin Login</h1>
-          <p className="text-muted-foreground max-w-xs mx-auto">
-            Access the dashboard to manage fuel prices and view transaction history.
+          <p className="text-muted-foreground w-full">
+            Access the dashboard to manage fuel prices.
           </p>
         </div>
 
-        <Button 
-          onClick={handleLogin} 
-          size="lg" 
-          className="w-full max-w-xs h-12 text-lg rounded-xl shadow-lg"
+        {loginMutation.error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {(loginMutation.error as Error).message}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="w-full space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="admin"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full h-12 text-lg rounded-xl shadow-lg"
+          disabled={loginMutation.isPending}
         >
-          Login with Replit
+          {loginMutation.isPending ? "Logging in..." : "Login"}
         </Button>
-        
+
         <div className="text-xs text-muted-foreground mt-8">
           Authorized personnel only.
         </div>
-      </div>
+      </form>
     </Layout>
   );
 }

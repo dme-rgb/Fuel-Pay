@@ -1,3 +1,14 @@
+import crypto from 'node:crypto';
+
+// Polyfill for Node < 21
+if (!(crypto as any).hash) {
+  (crypto as any).hash = (algorithm: string, data: any, outputEncoding: any) => {
+    const hash = crypto.createHash(algorithm);
+    hash.update(data);
+    return hash.digest(outputEncoding);
+  };
+}
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
