@@ -48,10 +48,15 @@ export async function registerRoutes(
     try {
       console.log(`Syncing ${type} to Google Sheets...`, data);
       const timestamp = formatTimestamp(new Date());
+      // Override the date in the data if it's a transaction
+      const syncData = { ...data };
+      if (type === "transaction" && syncData.date) {
+        syncData.date = timestamp;
+      }
       const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, data, timestamp }),
+        body: JSON.stringify({ type, data: syncData, timestamp }),
       });
       const result = await response.json();
       console.log(`Sync result for ${type}:`, result);
