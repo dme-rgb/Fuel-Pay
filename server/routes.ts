@@ -52,24 +52,25 @@ export async function registerRoutes(
       console.log(`Syncing ${type} to Google Sheets...`, data);
       const istTimestamp = formatTimestamp(new Date());
       
-      // CRITICAL: Clean up ANY ISO dates from the object
-      // Some ORMs/Libraries automatically add createdAt or date as Date objects
-      // which serialize to ISO strings. We must manually remove them.
-      const cleanData = { ...data };
+      // We must match the EXACT key names the sheet expects
+      // If the sheet uses "timestamp" or "date" as a column header, 
+      // it must be present in the data object.
+      const syncData = { 
+        ...data,
+        timestamp: istTimestamp,
+        date: istTimestamp
+      };
       
-      // Delete technical fields that often hold ISO strings
-      delete cleanData.createdAt;
-      delete cleanData.updatedAt;
-      
-      // Override or set the human-readable date
-      cleanData.date = istTimestamp;
+      // Some technical fields might interfere with sheet mapping
+      delete syncData.createdAt;
+      delete syncData.updatedAt;
 
       const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           type, 
-          data: cleanData, 
+          data: syncData, 
           timestamp: istTimestamp 
         }),
       });
