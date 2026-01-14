@@ -28,6 +28,7 @@ export const transactions = pgTable("transactions", {
   paymentMethod: text("payment_method"), // 'cash', 'card', 'upi', 'net_banking'
   authCode: text("auth_code"),
   status: text("status").default("pending"), // 'pending', 'paid', 'verified'
+  timestampStr: text("timestamp_str"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -43,11 +44,11 @@ export const otps = pgTable("otps", {
 });
 
 export const insertSettingsSchema = createInsertSchema(settings).omit({ id: true });
-export const insertTransactionSchema = createInsertSchema(transactions).omit({ 
-  id: true, 
+export const insertTransactionSchema = createInsertSchema(transactions).omit({
+  id: true,
   createdAt: true,
-  status: true, 
-  authCode: true 
+  status: true,
+  authCode: true
 }).extend({
   customerId: z.number().optional(),
 });

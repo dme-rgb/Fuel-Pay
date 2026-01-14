@@ -25,34 +25,35 @@ export default function Success() {
     }
     const txnData = JSON.parse(stored);
     setTxn(txnData);
+  }, [setLocation]);
 
-    // Polling logic for OTP
-    let pollInterval: any;
-    if (txnData.authCode === "PENDING") {
-      pollInterval = setInterval(async () => {
-        try {
-          const res = await fetch(`/api/transactions/${txnData.id}/otp-poll`);
-          const data = await res.json();
-          if (data.authCode && data.authCode !== "PENDING") {
-            setTxn((prev: any) => {
-              const updated = { ...prev, authCode: data.authCode };
-              localStorage.setItem("txn_success", JSON.stringify(updated));
-              return updated;
-            });
-            setPolling(false);
-            clearInterval(pollInterval);
-          }
-        } catch (err) {
-          console.error("Polling error:", err);
+  // Polling Effect - runs whenever txn.authCode is PENDING
+  useEffect(() => {
+    if (!txn || txn.authCode !== "PENDING") return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/transactions/${txn.id}/otp-poll`);
+        const data = await res.json();
+
+        if (data.authCode && data.authCode !== "PENDING") {
+          setTxn((prev: any) => {
+            const updated = { ...prev, authCode: data.authCode };
+            localStorage.setItem("txn_success", JSON.stringify(updated));
+            return updated;
+          });
         }
-      }, 3000); // Poll every 3 seconds
-    } else {
-      setPolling(false);
-    }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }, 3000);
 
+    return () => clearInterval(pollInterval);
+  }, [txn?.authCode, txn?.id]);
+
+  useEffect(() => {
     // Animation disappears after 60s
     const animTimeout = setTimeout(() => setShowAnimation(false), 60000);
-
     // 15s timer for refresh button logic
     const interval = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 0));
@@ -61,22 +62,36 @@ export default function Success() {
     return () => {
       clearTimeout(animTimeout);
       clearInterval(interval);
-      if (pollInterval) clearInterval(pollInterval);
     };
-  }, [setLocation]);
+  }, []);
 
-  const handleRefresh = () => {
-    if (attempts >= 1) {
+  const handleRefresh = async () => {
+    if (attempts >= 2) {
       toast({
         title: "Re-initialize Process",
-        description: "Please re-initialize the process with DEO and refresh the auth code.",
+        description: "Maximum refresh attempts reached. Please re-initialize.",
         variant: "destructive",
       });
+      return;
     }
+
     setAttempts((prev) => prev + 1);
     setTimer(15);
-    toast({ title: "Refreshing...", description: "Fetching new auth code..." });
-    // In a real app, call API to get new OTP
+    toast({ title: "Refreshing...", description: "Resetting and fetching new auth code..." });
+
+    if (txn) {
+      try {
+        await fetch(`/api/transactions/${txn.id}/reset`, { method: "POST" });
+        setTxn((prev: any) => {
+          const updated = { ...prev, authCode: "PENDING" };
+          localStorage.setItem("txn_success", JSON.stringify(updated));
+          return updated;
+        });
+      } catch (err) {
+        console.error("Failed to reset transaction:", err);
+        toast({ title: "Error", description: "Failed to reset. Try again.", variant: "destructive" });
+      }
+    }
   };
 
   const copyCode = () => {
@@ -91,11 +106,11 @@ export default function Success() {
   return (
     <Layout showNav={false}>
       <div className="flex flex-col items-center justify-center min-h-[80vh] text-center space-y-8 animate-enter">
-        
+
         {/* Animated Success Circle */}
         <AnimatePresence>
           {showAnimation && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 1 }}
               exit={{ opacity: 0, scale: 0.5 }}
               className="relative"
@@ -108,7 +123,7 @@ export default function Success() {
               >
                 <Check className="w-12 h-12 text-accent-foreground stroke-[3]" />
               </motion.div>
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1.5, opacity: 0 }}
                 transition={{ duration: 1.5, repeat: Infinity }}
@@ -124,20 +139,20 @@ export default function Success() {
         </div>
 
         {/* Auth Code Ticket */}
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
           className="w-full bg-white border-2 border-dashed border-primary/20 rounded-xl p-6 relative overflow-hidden group"
         >
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-          
+
           <div className="text-sm text-muted-foreground font-medium uppercase tracking-widest mb-2 flex justify-between items-center">
             <span>Auth Code</span>
             {timer === 0 && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleRefresh}
                 className="h-6 px-2 text-accent hover:text-accent/80 font-bold"
               >
@@ -149,7 +164,7 @@ export default function Success() {
               <span className="text-xs text-muted-foreground/50">Refresh in {timer}s</span>
             )}
           </div>
-          <div 
+          <div
             onClick={copyCode}
             className="text-4xl font-mono font-bold text-primary tracking-widest cursor-pointer hover:scale-105 transition-transform select-all flex items-center justify-center gap-3"
           >
@@ -167,7 +182,7 @@ export default function Success() {
               txn.authCode
             )}
           </div>
-          
+
           <div className="mt-6 pt-4 border-t border-dashed border-border space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Original Amount</span>
@@ -194,13 +209,13 @@ export default function Success() {
             </div>
           </div>
           <div className="mt-2 flex justify-between text-sm">
-             <span className="text-muted-foreground">Date</span>
-             <span className="font-medium">{format(new Date(), "dd MMM, HH:mm")}</span>
+            <span className="text-muted-foreground">Date</span>
+            <span className="font-medium">{format(new Date(), "dd MMM, HH:mm")}</span>
           </div>
         </motion.div>
 
         {/* Savings Badge */}
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -214,8 +229,8 @@ export default function Success() {
             <Share2 className="w-4 h-4 mr-2" />
             Receipt
           </Button>
-          <Button 
-            className="h-12 rounded-xl shadow-lg font-display" 
+          <Button
+            className="h-12 rounded-xl shadow-lg font-display"
             onClick={() => setLocation("/dashboard")}
           >
             <Home className="w-4 h-4 mr-2" />

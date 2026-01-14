@@ -99,12 +99,13 @@ export class MemStorage implements IStorage {
     return this.transactions.filter(t => t.customerId === customerId).sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
   }
 
-  async createTransaction(insertTransaction: InsertTransaction & { customerId?: number, authCode?: string | null, status?: string }): Promise<Transaction> {
+  async createTransaction(insertTransaction: InsertTransaction & { customerId?: number, authCode?: string | null, status?: string, timestampStr?: string }): Promise<Transaction> {
     const transaction: Transaction = {
       id: this.transactionIdCounter++,
       userId: null,
       authCode: insertTransaction.authCode || null,
       status: insertTransaction.status || 'paid',
+      timestampStr: insertTransaction.timestampStr || null,
       createdAt: new Date(),
       customerId: insertTransaction.customerId ?? null,
       paymentMethod: insertTransaction.paymentMethod ?? null,

@@ -9,14 +9,14 @@ function doGet(e) {
   var type = e.parameter.type;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(type === "customer" ? "Customers" : (type === "otp-amount-data" ? "OTP-AMOUNT DATA" : "Transactions"));
-  
-  if (!sheet) return ContentService.createTextOutput(JSON.stringify({data: []})).setMimeType(ContentService.MimeType.JSON);
-  
+
+  if (!sheet) return ContentService.createTextOutput(JSON.stringify({ data: [] })).setMimeType(ContentService.MimeType.JSON);
+
   var data = sheet.getDataRange().getValues();
   var headers = data.shift();
-  var result = data.map(function(row) {
+  var result = data.map(function (row) {
     var obj = {};
-    headers.forEach(function(header, i) {
+    headers.forEach(function (header, i) {
       var key = header.toLowerCase().replace(/ /g, "");
       // Map sheet headers to schema keys
       if (key === "customerid") key = "customerId";
@@ -25,14 +25,14 @@ function doGet(e) {
       if (key === "finalamount") key = "finalAmount";
       if (key === "authcode") key = "authCode";
       if (key === "vehiclenumber") key = "vehicleNumber";
-      
+
       // Special mapping for OTP-AMOUNT DATA (A: Timestamp, B: OTP, C: Amount)
       if (type === "otp-amount-data") {
         if (i === 0) key = "timestamp";
-        if (i === 1) key = "otp";
-        if (i === 2) key = "amount";
+        if (i === 2) key = "otp";
+        if (i === 3) key = "amount";
       }
-      
+
       obj[key] = row[i];
     });
     return obj;
@@ -40,12 +40,12 @@ function doGet(e) {
 
   // No filtering needed for OTP polling, just return all and server picks latest
   if (e.parameter.customerId) {
-    result = result.filter(function(item) {
+    result = result.filter(function (item) {
       return item.customerId == e.parameter.customerId;
     });
   }
 
-  return ContentService.createTextOutput(JSON.stringify({data: result}))
+  return ContentService.createTextOutput(JSON.stringify({ data: result }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -55,43 +55,43 @@ function doPost(e) {
     var type = contents.type;
     var data = contents.data;
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    
+
     // Get or create sheets
     var customerSheet = ss.getSheetByName("Customers") || ss.insertSheet("Customers");
     var transactionSheet = ss.getSheetByName("Transactions") || ss.insertSheet("Transactions");
     var otpSheet = ss.getSheetByName("OTP-AMOUNT DATA") || ss.insertSheet("OTP-AMOUNT DATA");
-    
+
     if (type === "customer") {
       // Set headers if new sheet
       if (customerSheet.getLastRow() === 0) {
         customerSheet.appendRow(["ID", "Phone", "Vehicle Number", "Created At"]);
       }
       customerSheet.appendRow([data.id, data.phone, data.vehicleNumber || "", data.createdAt]);
-    } 
+    }
     else if (type === "transaction") {
       // Set headers if new sheet
       if (transactionSheet.getLastRow() === 0) {
         transactionSheet.appendRow(["ID", "Customer ID", "Original Amount", "Discount", "Final Amount", "Savings", "Method", "Auth Code", "Status", "Date"]);
       }
       transactionSheet.appendRow([
-        data.id, 
-        data.customerId, 
-        data.originalAmount, 
-        data.discountAmount, 
-        data.finalAmount, 
-        data.savings, 
-        data.paymentMethod, 
-        data.authCode || "PENDING", 
-        data.status, 
-        data.createdAt
+        data.id,
+        data.customerId,
+        data.originalAmount,
+        data.discountAmount,
+        data.finalAmount,
+        data.savings,
+        data.paymentMethod,
+        data.authCode || "PENDING",
+        data.status,
+        data.isttimestamp || data.timestampStr || data.createdAt
       ]);
     }
-    
-    return ContentService.createTextOutput(JSON.stringify({result: "success"}))
+
+    return ContentService.createTextOutput(JSON.stringify({ result: "success" }))
       .setMimeType(ContentService.MimeType.JSON);
-      
+
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({result: "error", message: err.toString()}))
+    return ContentService.createTextOutput(JSON.stringify({ result: "error", message: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }

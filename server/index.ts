@@ -96,20 +96,20 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   // Determine port dynamically
-const port =
-  Number(process.env.PORT) ||
-  Number(process.argv.find(arg => arg.startsWith('--port='))?.split('=')[1]) ||
-  5001;
+  const port =
+    Number(process.env.PORT) ||
+    Number(process.argv.find(arg => arg.startsWith('--port='))?.split('=')[1]) ||
+    3000;
 
-httpServer.listen(
-  {
-    port,
-    host: "::",
-    reusePort: true,
-  },
-  () => {
-    log(`FuelPay API running on port ${port}`);
-  },
-);
+  httpServer.listen(
+    {
+      port,
+      host: "::",
+      reusePort: true,
+    },
+    () => {
+      log(`FuelPay API running on port ${port}`);
+    },
+  );
 
 })();
