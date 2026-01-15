@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, ArrowRight, Car } from "lucide-react";
+import { Phone, ArrowRight, Car, Loader2 } from "lucide-react";
 
 export default function CustomerLogin() {
   const [, setLocation] = useLocation();
   const [phone, setPhone] = useState("");
   const [vehicleNumber, setVehicleNumber] = useState("");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -20,6 +21,7 @@ export default function CustomerLogin() {
       return;
     }
 
+    setLoading(true);
     try {
       const res = await fetch("/api/customers/login", {
         method: "POST",
@@ -31,6 +33,8 @@ export default function CustomerLogin() {
       setLocation("/payment");
     } catch (err) {
       toast({ title: "Login Failed", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,9 +79,22 @@ export default function CustomerLogin() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-14 text-lg rounded-xl font-display shadow-lg shadow-primary/20">
-              Continue
-              <ArrowRight className="w-5 h-5 ml-2" />
+            <Button
+              type="submit"
+              className="w-full h-14 text-lg rounded-xl font-display shadow-lg shadow-primary/20"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  Continue
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </>
+              )}
             </Button>
           </form>
         </Card>

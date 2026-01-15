@@ -146,7 +146,7 @@ export async function registerRoutes(
       // Update local memory to stay in sync
       const customer = await storage.getOrCreateCustomer(existing.phone, vehicleNumber || existing.vehicleNumber);
       // Ensure local ID matches Sheet ID for consistency
-      customer.id = Number(existing.id);
+      customer.id = existing.id;
       return res.json(customer);
     }
 
@@ -204,7 +204,7 @@ export async function registerRoutes(
 
       const transaction = await storage.createTransaction({
         ...input,
-        customerId: input.customerId ? Number(input.customerId) : null,
+        customerId: input.customerId ? String(input.customerId) : undefined,
         authCode: "PENDING",
         status: 'paid',
         timestampStr: istTimestampStr
@@ -288,7 +288,7 @@ export async function registerRoutes(
 
   app.get(api.transactions.list.path, async (req, res) => {
     // Attempt to get from Sheets if customer context is available
-    const customerId = req.query.customerId;
+    const customerId = req.query.customerId as string;
     if (customerId) {
       const sheetData = await fetchFromSheets("transaction", `customerId=${customerId}`);
       if (sheetData.length > 0) {

@@ -11,7 +11,7 @@ export const settings = pgTable("settings", {
 });
 
 export const customers = pgTable("customers", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(), // Changed from serial to text for alphanumeric
   phone: varchar("phone", { length: 20 }).notNull().unique(),
   vehicleNumber: varchar("vehicle_number", { length: 20 }),
   createdAt: timestamp("created_at").defaultNow(),
@@ -20,7 +20,7 @@ export const customers = pgTable("customers", {
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id"), // Matches users.id from auth.ts
-  customerId: integer("customer_id").references(() => customers.id),
+  customerId: text("customer_id").references(() => customers.id), // Changed reference to text
   originalAmount: numeric("original_amount").notNull(),
   discountAmount: numeric("discount_amount").notNull(),
   finalAmount: numeric("final_amount").notNull(),
@@ -50,7 +50,7 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
   status: true,
   authCode: true
 }).extend({
-  customerId: z.number().optional(),
+  customerId: z.string().optional(),
 });
 
 export type Settings = typeof settings.$inferSelect;

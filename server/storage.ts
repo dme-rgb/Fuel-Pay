@@ -3,8 +3,7 @@ import createMemoryStore from "memorystore";
 const MemoryStore = createMemoryStore(session);
 
 import {
-  users, settings, transactions, otps, customers,
-  type User, type InsertUser,
+  type User, type UpsertUser,
   type Settings, type InsertSettings,
   type Transaction, type InsertTransaction,
   type Otp, type Customer, type InsertCustomer
@@ -13,16 +12,16 @@ import {
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  createUser(user: UpsertUser): Promise<User>;
   sessionStore: session.Store;
 
   getSettings(): Promise<Settings | undefined>;
   updateSettings(settings: InsertSettings): Promise<Settings>;
 
   getOrCreateCustomer(phone: string, vehicleNumber?: string): Promise<Customer>;
-  getCustomerTransactions(customerId: number): Promise<Transaction[]>;
+  getCustomerTransactions(customerId: string): Promise<Transaction[]>;
 
-  createTransaction(transaction: InsertTransaction & { customerId?: number }): Promise<Transaction>;
+  createTransaction(transaction: InsertTransaction & { customerId?: string, authCode?: string | null, status?: string, timestampStr?: string }): Promise<Transaction>;
   getTransaction(id: number): Promise<Transaction | undefined>;
   updateTransactionStatus(id: number, status: string, authCode?: string): Promise<Transaction>;
   getTransactions(): Promise<Transaction[]>;
@@ -40,7 +39,6 @@ export class MemStorage implements IStorage {
   private transactions: Transaction[] = [];
   private customers: Customer[] = [];
   private otps: Otp[] = [];
-  private customerIdCounter = 1;
   private transactionIdCounter = 1;
   private otpIdCounter = 1;
 
@@ -58,9 +56,9 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(u => u.username === username);
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser: UpsertUser): Promise<User> {
     const id = this.users.size + 1;
-    const user: User = { ...insertUser, id, createdAt: new Date() };
+    const user: User = { ...insertUser, role: insertUser.role ?? "admin", id, createdAt: new Date() };
     this.users.set(id.toString(), user);
     return user;
   }
@@ -85,8 +83,13 @@ export class MemStorage implements IStorage {
       if (vehicleNumber) customer.vehicleNumber = vehicleNumber;
       return customer;
     }
-    // Create new customer with internal ID
-    customer = { id: this.customerIdCounter++, phone, vehicleNumber: vehicleNumber || null, createdAt: new Date() };
+
+    // Generate Deterministic Alphanumeric ID based on phone
+    // Format: "C" + Phone (Simple, Unique, Alphanumeric, Persistent)
+    // Example: 9876543210 -> C9876543210
+    const id = `C${phone}`;
+
+    customer = { id, phone, vehicleNumber: vehicleNumber || null, createdAt: new Date() };
     this.customers.push(customer);
     return customer;
   }
@@ -95,11 +98,11 @@ export class MemStorage implements IStorage {
     return this.customers;
   }
 
-  async getCustomerTransactions(customerId: number): Promise<Transaction[]> {
+  async getCustomerTransactions(customerId: string): Promise<Transaction[]> {
     return this.transactions.filter(t => t.customerId === customerId).sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
   }
 
-  async createTransaction(insertTransaction: InsertTransaction & { customerId?: number, authCode?: string | null, status?: string, timestampStr?: string }): Promise<Transaction> {
+  async createTransaction(insertTransaction: InsertTransaction & { customerId?: string, authCode?: string | null, status?: string, timestampStr?: string }): Promise<Transaction> {
     const transaction: Transaction = {
       id: this.transactionIdCounter++,
       userId: null,
@@ -120,8 +123,7 @@ export class MemStorage implements IStorage {
 
   async setCustomers(customers: Customer[]) {
     this.customers = customers;
-    const maxId = customers.length > 0 ? Math.max(...customers.map(c => Number(c.id))) : 0;
-    this.customerIdCounter = maxId + 1;
+    // No counter needed for string IDs
   }
 
   async getTransaction(id: number): Promise<Transaction | undefined> {
