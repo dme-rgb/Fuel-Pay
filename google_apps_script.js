@@ -41,8 +41,6 @@ function doGet(e) {
   // No filtering needed for OTP polling, just return all and server picks latest
   // Filter by Customer ID
   if (e.parameter.customerId) {
-    +
-    0
     result = result.filter(function (item) {
       return String(item.customerId) == String(e.parameter.customerId);
     });

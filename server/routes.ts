@@ -233,7 +233,9 @@ export async function registerRoutes(
 
     if (otpData && otpData.length > 0) {
       // Filter OTPs that are newer than the transaction
-      const txnTime = new Date(txn.isttimestamp).getTime();
+      // Use timestampStr which contains the IST string, or fall back to createdAt (handled safely)
+      const txnTimestamp = txn.timestampStr || txn.createdAt;
+      const txnTime = new Date(txnTimestamp || 0).getTime();
 
       const validOtps = otpData.filter((item: any) => {
         if (!item.timestamp) return false;
