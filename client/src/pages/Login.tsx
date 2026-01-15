@@ -28,7 +28,15 @@ export default function Login() {
   return (
     <Layout showNav={false}>
       <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center min-h-[80vh] w-full max-w-sm mx-auto space-y-8 animate-enter px-4">
-        <div className="bg-primary/5 p-6 rounded-full">
+        <div className="bg-primary/5 p-6 rounded-full relative group">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute -top-12 -left-12 text-muted-foreground hover:text-primary"
+            onClick={() => setLocation("/")}
+          >
+            ← Back to Home
+          </Button>
           <LockKeyhole className="w-12 h-12 text-primary" />
         </div>
 

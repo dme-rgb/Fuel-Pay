@@ -110,28 +110,32 @@ export default function Success() {
         {/* Animated Success Circle */}
         <AnimatePresence>
           {showAnimation && (
-            <motion.div
-              initial={{ opacity: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              className="relative"
-            >
+            <motion.div className="relative">
+              {/* Tick */}
               <motion.div
-                initial={{ scale: 0, opacity: 0 }}
+                initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                transition={{ type: "spring", stiffness: 120, damping: 16 }}
                 className="w-24 h-24 bg-accent rounded-full flex items-center justify-center shadow-xl shadow-accent/30 z-10 relative"
               >
                 <Check className="w-12 h-12 text-accent-foreground stroke-[3]" />
               </motion.div>
+
+              {/* Smooth breathing pulse */}
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1.5, opacity: 0 }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-                className="absolute inset-0 bg-accent rounded-full -z-0"
+                animate={{ scale: 1.5, opacity: 0.35 }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  repeatType: "mirror",   // 🔥 KEY FIX
+                  ease: "easeInOut",
+                }}
+                className="absolute inset-0 rounded-full bg-accent/20"
               />
             </motion.div>
           )}
         </AnimatePresence>
+
 
         <div className="space-y-2">
           <h1 className="text-3xl font-display font-bold text-primary">Payment Successful!</h1>

@@ -18,14 +18,14 @@ function AmountDisplay({ target, start, onComplete }: { target: number, start: n
 
   useEffect(() => {
     if (hasAnimated) return;
-    
+
     // Show original amount first
     setDisplayValue(start);
-    
+
     const timer = setTimeout(() => {
       const controls = animate(start, target, {
-        duration: 2,
-        ease: [0.34, 1.56, 0.64, 1], // Custom bouncy ease for smoother feel
+        duration: 1,
+        ease: "easeOut", // Smoother, no overshoot
         onUpdate: (value) => setDisplayValue(value),
         onComplete: () => {
           setHasAnimated(true);
@@ -34,7 +34,7 @@ function AmountDisplay({ target, start, onComplete }: { target: number, start: n
       });
       return () => controls.stop();
     }, 800);
-    
+
     return () => clearTimeout(timer);
   }, [target, start, onComplete, hasAnimated]);
 
@@ -93,8 +93,8 @@ export default function Home() {
         </div>
 
         {/* Calculation Form */}
-        <form 
-          onSubmit={form.handleSubmit(handleCalculate)} 
+        <form
+          onSubmit={form.handleSubmit(handleCalculate)}
           className="
             space-y-6 
             bg-gradient-to-br from-white via-white to-slate-100
@@ -116,7 +116,7 @@ export default function Home() {
             <CurrencyInput
               {...form.register("amount")}
               placeholder="500"
-              
+
               autoFocus
               className="bg-transparent"
             />
@@ -191,11 +191,11 @@ export default function Home() {
                 hover:shadow-[0_16px_45px_rgba(0,0,0,0.18)]
                 transition-all duration-300">
                 <div className="absolute top-0 right-0 p-8 opacity-10">
-                   <Droplets className="w-32 h-32" />
+                  <Droplets className="w-32 h-32" />
                 </div>
-                
+
                 <div className="relative z-10 space-y-6">
-                  
+
 
                   <div className="flex justify-between items-end">
                     <div className="text-primary-foreground/70 text-sm font-medium">Original Cost</div>
@@ -205,17 +205,17 @@ export default function Home() {
                   <div className="pt-2">
                     <div className="text-accent text-sm font-bold uppercase tracking-wider mb-1">Total Payable</div>
                     <div className="font-display text-5xl font-bold text-white tracking-tight">
-                      <AmountDisplay 
-                        target={Number(calcResult.finalAmount)} 
-                        start={Number(calcResult.originalAmount)} 
+                      <AmountDisplay
+                        target={Number(calcResult.finalAmount)}
+                        start={Number(calcResult.originalAmount)}
                         onComplete={() => setShowSavings(true)}
                       />
                     </div>
                   </div>
-                  
+
                   <AnimatePresence>
                     {showSavings && (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, ease: "easeOut" }}

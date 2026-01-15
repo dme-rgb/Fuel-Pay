@@ -20,7 +20,7 @@ export function Layout({ children, showNav = true }: LayoutProps) {
     <div className="min-h-screen bg-background flex flex-col items-center">
       {/* Container - constrained width for mobile feel on desktop */}
       <div className="w-full max-w-md min-h-screen bg-white shadow-2xl flex flex-col relative overflow-hidden">
-        
+
         {/* Navbar */}
         {showNav && (
           <nav className="px-6 py-4 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-border/50">
@@ -37,8 +37,8 @@ export function Layout({ children, showNav = true }: LayoutProps) {
 
             <div className="flex items-center gap-2">
               {user ? (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
                   onClick={() => logout()}
                   className="text-muted-foreground hover:text-destructive transition-colors"
@@ -60,16 +60,21 @@ export function Layout({ children, showNav = true }: LayoutProps) {
 
         {/* Content */}
         <main className={clsx("flex-1 p-6 relative", !showNav && "pt-6")}>
-           {/* Background decorative blobs */}
-           <div className="absolute top-0 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-           <div className="absolute bottom-0 -right-20 w-64 h-64 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
-           
+          {/* Background decorative blobs */}
+          <div className="absolute top-0 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 -right-20 w-64 h-64 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
+
           {children}
         </main>
 
         {/* Footer */}
-        <footer className="py-6 text-center text-xs text-muted-foreground border-t border-border/40">
-          <p>© 2024 FuelPay Systems</p>
+        <footer className="py-6 text-center text-xs text-muted-foreground border-t border-border/40 flex justify-center gap-6">
+          <Link href="/contact" className="hover:text-primary transition-colors hover:underline">
+            Contact Us
+          </Link>
+          <Link href="/terms" className="hover:text-primary transition-colors hover:underline">
+            T&C and Policies
+          </Link>
         </footer>
       </div>
     </div>

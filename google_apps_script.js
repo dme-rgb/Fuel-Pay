@@ -39,9 +39,19 @@ function doGet(e) {
   });
 
   // No filtering needed for OTP polling, just return all and server picks latest
+  // Filter by Customer ID
   if (e.parameter.customerId) {
+    +
+    0
     result = result.filter(function (item) {
-      return item.customerId == e.parameter.customerId;
+      return String(item.customerId) == String(e.parameter.customerId);
+    });
+  }
+
+  // Filter by Phone
+  if (e.parameter.phone) {
+    result = result.filter(function (item) {
+      return String(item.phone) == String(e.parameter.phone);
     });
   }
 
@@ -64,9 +74,18 @@ function doPost(e) {
     if (type === "customer") {
       // Set headers if new sheet
       if (customerSheet.getLastRow() === 0) {
-        customerSheet.appendRow(["ID", "Phone", "Vehicle Number", "Created At"]);
+        customerSheet.appendRow(["ID", "Phone", "Vehicle Number", "Created At", "Synced At"]);
       }
-      customerSheet.appendRow([data.id, data.phone, data.vehicleNumber || "", data.createdAt]);
+      // Robustly handle vehicleNumber, ensuring it's never undefined/null
+      var vNum = (data.vehicleNumber !== undefined && data.vehicleNumber !== null) ? String(data.vehicleNumber) : "";
+
+      customerSheet.appendRow([
+        data.id,
+        data.phone,
+        vNum,
+        data.createdAt,
+        new Date()
+      ]);
     }
     else if (type === "transaction") {
       // Set headers if new sheet

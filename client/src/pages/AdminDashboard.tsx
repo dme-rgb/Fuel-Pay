@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -80,8 +80,8 @@ export default function AdminDashboard() {
             <Settings2 className="w-6 h-6" />
           </div>
           <div>
-             <h1 className="text-2xl font-display font-bold">Admin Dashboard</h1>
-             <p className="text-muted-foreground text-sm">Manage prices and view history</p>
+            <h1 className="text-2xl font-display font-bold">Admin Dashboard</h1>
+            <p className="text-muted-foreground text-sm">Manage prices and view history</p>
           </div>
         </div>
 
@@ -95,29 +95,29 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Fuel Price (₹)</label>
-                  <Input 
-                    type="number" 
-                    step="0.01" 
-                    {...form.register("fuelPrice")} 
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...form.register("fuelPrice")}
                     className="font-mono"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-accent">Discount (₹)</label>
-                  <Input 
-                    type="number" 
-                    step="0.01" 
-                    {...form.register("discountPerLiter")} 
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...form.register("discountPerLiter")}
                     className="font-mono text-accent font-bold"
                   />
                 </div>
               </div>
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={updateSettings.isPending}
               >
-                {updateSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : <Save className="w-4 h-4 mr-2"/>}
+                {updateSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                 Update Prices
               </Button>
             </form>
@@ -174,7 +174,69 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Customers Table */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <History className="w-5 h-5 text-muted-foreground" />
+              Registered Customers
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+            <CustomerList />
+          </div>
+        </div>
       </div>
     </Layout>
+  );
+}
+
+function CustomerList() {
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/customers")
+      .then(res => res.json())
+      .then(data => {
+        setCustomers(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="p-8 text-center text-muted-foreground">Loading customers...</div>;
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-left">
+        <thead className="bg-secondary/50 text-muted-foreground font-medium border-b border-border">
+          <tr>
+            <th className="px-4 py-3">Phone</th>
+            <th className="px-4 py-3">Vehicle</th>
+            <th className="px-4 py-3 text-right">Joined</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/50">
+          {customers.length === 0 ? (
+            <tr>
+              <td colSpan={3} className="p-8 text-center text-muted-foreground">No customers yet</td>
+            </tr>
+          ) : (
+            customers.map((c: any) => (
+              <tr key={c.id} className="hover:bg-secondary/20 transition-colors">
+                <td className="px-4 py-3 font-mono font-medium">{c.phone}</td>
+                <td className="px-4 py-3 font-mono">{c.vehicleNumber || "-"}</td>
+                <td className="px-4 py-3 text-right text-xs text-muted-foreground">
+                  {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "-"}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }

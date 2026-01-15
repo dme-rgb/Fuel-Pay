@@ -4,6 +4,8 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import * as fs from "fs";
+import * as path from "path";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -34,8 +36,16 @@ export async function registerRoutes(
   const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxuSJnbjx9PlHqq-Gr7yffrieCyTEHICqxM-fOqIHtW_LpNIl2-ay1EFCzAUMV1sewa/exec";
 
   const syncToSheets = async (type: "customer" | "transaction", data: any) => {
+    const logFile = path.join(process.cwd(), "sync_debug.log");
+    const log = (msg: string) => {
+      const timestamp = new Date().toISOString();
+      fs.appendFileSync(logFile, `[${timestamp}] ${msg}\n`);
+      console.log(msg);
+    };
+
     try {
-      console.log(`Syncing ${type} to Google Sheets...`, data);
+      log(`[Sync Start] Syncing ${type} to Google Sheets...`);
+      log(`[Sync Payload] ${JSON.stringify(data, null, 2)}`);
 
       // Calculate IST Timestamp
       const now = new Date();
@@ -43,40 +53,58 @@ export async function registerRoutes(
       const istTime = new Date(now.getTime() + istOffset);
       const istTimestamp = istTime.toISOString().replace('T', ' ').substring(0, 19);
 
+      // Sanitize Data (Ensure vehicleNumber is string or empty string, not null/undefined)
+      const sanitizedData = {
+        ...data,
+        vehicleNumber: data.vehicleNumber || "",
+        isttimestamp: istTimestamp,
+        timestampStr: istTimestamp
+      };
+
       const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type,
-          data: {
-            ...data,
-            isttimestamp: istTimestamp,
-            timestampStr: istTimestamp
-          },
+          data: sanitizedData,
           timestamp: now.toISOString(),
           isttimestamp: istTimestamp
         }),
       });
       const result = await response.json();
-      console.log(`Sync result for ${type}:`, result);
+      log(`[Sync Success] Result for ${type}: ${JSON.stringify(result)}`);
     } catch (err) {
-      console.error(`Failed to sync ${type} to Google Sheets:`, err);
+      log(`[Sync Failed] Failed to sync ${type} to Google Sheets: ${err}`);
+      if (err instanceof Error) {
+        log(`[Sync Failed Stack] ${err.stack}`);
+      }
     }
   };
 
   const fetchFromSheets = async (type: "customer" | "transaction" | "otp-amount-data", queryParams: string = "") => {
+    const logFile = path.join(process.cwd(), "sync_debug.log");
+    const log = (msg: string) => {
+      const timestamp = new Date().toISOString();
+      fs.appendFileSync(logFile, `[${timestamp}] ${msg}\n`);
+      console.log(msg);
+    };
+
     try {
-      console.log(`Fetching ${type} from Google Sheets... query: ${queryParams}`);
-      const response = await fetch(`${GOOGLE_SHEETS_WEBHOOK_URL}?type=${type}&${queryParams}`);
+      log(`[Fetch Start] Fetching ${type} from Google Sheets... query: ${queryParams}`);
+      const url = `${GOOGLE_SHEETS_WEBHOOK_URL}?type=${type}&${queryParams}`;
+      log(`[Fetch URL] ${url}`);
+
+      const response = await fetch(url);
       if (!response.ok) {
-        console.error(`Sheets fetch failed: ${response.status} ${response.statusText}`);
+        log(`[Fetch Failed] Status: ${response.status} ${response.statusText}`);
         return [];
       }
       const result = await response.json();
-      console.log(`Fetch result for ${type}:`, result);
+      log(`[Fetch Result Payload] ${JSON.stringify(result, null, 2)}`);
+
       return result.data || [];
     } catch (err) {
-      console.error(`Failed to fetch ${type} from Google Sheets:`, err);
+      log(`[Fetch Error] Failed to fetch ${type} from Google Sheets: ${err}`);
       return [];
     }
   };
@@ -109,7 +137,7 @@ export async function registerRoutes(
   // Customer Login
   app.post("/api/customers/login", async (req, res) => {
     const { phone, vehicleNumber } = req.body;
-    if (!phone) return res.status(400).send("Phone required");
+    if (!phone || !vehicleNumber) return res.status(400).send("Phone and Vehicle Number required");
 
     // 1. Check Google Sheets first
     const sheetCustomers = await fetchFromSheets("customer", `phone=${phone}`);
@@ -205,7 +233,7 @@ export async function registerRoutes(
 
     if (otpData && otpData.length > 0) {
       // Filter OTPs that are newer than the transaction
-      const txnTime = new Date(txn.createdAt).getTime();
+      const txnTime = new Date(txn.isttimestamp).getTime();
 
       const validOtps = otpData.filter((item: any) => {
         if (!item.timestamp) return false;
@@ -277,6 +305,20 @@ export async function registerRoutes(
       Math.floor(1000 + Math.random() * 9000).toString()
     ]);
     res.json({ message: "OTPs refreshed" });
+  });
+
+
+  // 3. New Endpoint: Get All Customers (For Admin Dashboard)
+  app.get("/api/customers", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const customers = await storage.getCustomers();
+      res.json(customers);
+    } catch (err) {
+      console.error("Failed to fetch customers:", err);
+      res.status(500).json({ message: "Failed to fetch customers" });
+    }
   });
 
   return httpServer;

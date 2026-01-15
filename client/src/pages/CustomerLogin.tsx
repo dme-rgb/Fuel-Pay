@@ -19,7 +19,7 @@ export default function CustomerLogin() {
       toast({ title: "Invalid Phone", description: "Please enter a valid phone number", variant: "destructive" });
       return;
     }
-    
+
     try {
       const res = await fetch("/api/customers/login", {
         method: "POST",
@@ -49,9 +49,9 @@ export default function CustomerLogin() {
                 <label className="text-sm font-medium">Mobile Number</label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                  <Input 
-                    type="tel" 
-                    placeholder="9876543210" 
+                  <Input
+                    type="tel"
+                    placeholder="9876543210"
                     className="pl-10 h-12 text-lg"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -61,14 +61,15 @@ export default function CustomerLogin() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Vehicle Number (Optional)</label>
+                <label className="text-sm font-medium">Vehicle Number</label>
                 <div className="relative">
                   <Car className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                  <Input 
-                    placeholder="MH 12 AB 1234" 
+                  <Input
+                    placeholder="MH 12 AB 1234"
                     className="pl-10 h-12 text-lg uppercase"
                     value={vehicleNumber}
                     onChange={(e) => setVehicleNumber(e.target.value)}
+                    required
                   />
                 </div>
               </div>

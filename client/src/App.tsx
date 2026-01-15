@@ -11,6 +11,8 @@ import Success from "@/pages/Success";
 import AdminDashboard from "@/pages/AdminDashboard";
 import Login from "@/pages/Login";
 import CustomerLogin from "@/pages/CustomerLogin";
+import Contact from "@/pages/Contact";
+import Terms from "@/pages/Terms";
 
 function Router() {
   return (
@@ -22,6 +24,8 @@ function Router() {
       <Route path="/success" component={Success} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/auth" component={Login} />
+      <Route path="/contact" component={Contact} />
+      <Route path="/terms" component={Terms} />
       <Route component={NotFound} />
     </Switch>
   );
