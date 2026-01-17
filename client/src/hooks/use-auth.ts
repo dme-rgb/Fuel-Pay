@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { User, InsertUser } from "@shared/schema";
+import type { User, UpsertUser } from "@shared/schema";
 
 async function fetchUser(): Promise<User | null> {
   const response = await fetch("/api/user");
@@ -15,7 +15,7 @@ async function fetchUser(): Promise<User | null> {
   return response.json();
 }
 
-async function login(credentials: Pick<InsertUser, "username" | "password">): Promise<User> {
+async function login(credentials: Pick<UpsertUser, "username" | "password">): Promise<User> {
   const response = await fetch("/api/login", {
     method: "POST",
     headers: {

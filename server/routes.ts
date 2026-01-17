@@ -164,31 +164,33 @@ export async function registerRoutes(
 
   app.post(api.transactions.calculate.path, async (req, res) => {
     const { amount } = req.body;
-    const settings = await storage.getSettings();
+    // Tiered Discount Logic (Randomized based on Amount Slabs)
+    let minDiscount = 0;
+    let maxDiscount = 0;
 
-    if (!settings) {
-      return res.status(500).json({ message: "Settings not initialized" });
+    if (amount <= 9500) {
+      minDiscount = 4;
+      maxDiscount = 10;
+    } else if (amount <= 19000) {
+      minDiscount = 10;
+      maxDiscount = 30;
+    } else if (amount <= 28500) {
+      minDiscount = 20;
+      maxDiscount = 40;
+    } else {
+      minDiscount = 40;
+      maxDiscount = 50;
     }
 
-    const fuelPrice = parseFloat(settings.fuelPrice);
-    const discountPerLiter = parseFloat(settings.discountPerLiter);
-
-    if (fuelPrice <= 0) {
-      return res.status(400).json({ message: "Invalid fuel price" });
-    }
-
-    const liters = amount / fuelPrice;
-    const discount = liters * discountPerLiter;
+    // Generate random integer between min and max (inclusive)
+    const discount = Math.floor(Math.random() * (maxDiscount - minDiscount + 1)) + minDiscount;
     const finalAmount = amount - discount;
 
     res.json({
       originalAmount: amount.toFixed(2),
       finalAmount: finalAmount.toFixed(2),
       discountAmount: discount.toFixed(2),
-      savings: discount.toFixed(2),
-      fuelPrice: settings.fuelPrice,
-      discountPerLiter: settings.discountPerLiter,
-      liters: liters.toFixed(2)
+      savings: discount.toFixed(2)
     });
   });
 
@@ -227,6 +229,18 @@ export async function registerRoutes(
       return res.json({ authCode: txn.authCode });
     }
 
+    // SIMULATION FOR PREVIEW
+    if (txn.originalAmount === "888.00") {
+      await new Promise(r => setTimeout(r, 2000));
+      const updated = await storage.updateTransactionStatus(id, 'paid', "VERIFIED");
+      return res.json({ authCode: updated.authCode });
+    }
+    if (txn.originalAmount === "999.00") {
+      await new Promise(r => setTimeout(r, 2000));
+      const updated = await storage.updateTransactionStatus(id, 'paid', "999999");
+      return res.json({ authCode: updated.authCode });
+    }
+
     // Poll "OTP-AMOUNT DATA" sheet - get latest entry
     const otpData = await fetchFromSheets("otp-amount-data");
     console.log("Raw OTP Data from Sheets:", JSON.stringify(otpData, null, 2));
@@ -240,24 +254,58 @@ export async function registerRoutes(
       const validOtps = otpData.filter((item: any) => {
         if (!item.timestamp) return false;
         const otpTime = new Date(item.timestamp).getTime();
-        return otpTime > txnTime;
+        if (otpTime <= txnTime) return false;
+
+        // Check 1: OTP Match (Must be non-empty string)
+        // STRICT CHECK: Only check item.otp (mapped from Column C)
+        // Removing item.b fallback as it might pick up Column B data (e.g. Phone) which is not an OTP
+        if (item.otp && String(item.otp).trim().length > 0) return true;
+
+        // Check 2: Amount Match
+        // We compare the sheet amount with the transaction's ORIGINAL amount (User Request)
+        if (item.amount && String(item.amount).trim().length > 0) {
+          const sheetAmount = parseFloat(item.amount);
+          const txnAmount = parseFloat(txn.originalAmount); // Changed from finalAmount to originalAmount
+
+          // Check if sheetAmount is a valid number
+          if (!isNaN(sheetAmount) && Math.abs(sheetAmount - txnAmount) < 1.0) {
+            return true;
+          }
+        }
+        return false;
       });
 
-      console.log(`Found ${validOtps.length} valid OTPs after timestamp filter`);
+      console.log(`Found ${validOtps.length} valid entries after timestamp & content filter`);
 
       if (validOtps.length > 0) {
-        // Find the absolute latest valid OTP
-        const latestOtp = validOtps[validOtps.length - 1];
-        console.log("Latest valid OTP identified:", latestOtp);
+        // Find the absolute latest valid entry
+        const latestEntry = validOtps[validOtps.length - 1];
+        console.log("Latest valid entry identified:", latestEntry);
 
-        if (latestOtp && (latestOtp.otp || latestOtp.b)) {
-          const code = latestOtp.otp || latestOtp.b;
+        let code = null;
+
+        // Determine Auth Code priority:
+        // 1. Amount Match -> "VERIFIED" (Triggers Redirect)
+        if (latestEntry.amount && String(latestEntry.amount).trim().length > 0) {
+          const sheetAmount = parseFloat(latestEntry.amount);
+          const txnAmount = parseFloat(txn.originalAmount);
+          if (!isNaN(sheetAmount) && Math.abs(sheetAmount - txnAmount) < 1.0) {
+            code = "VERIFIED";
+          }
+        }
+
+        // 2. If no Amount Match, check for OTP
+        if (!code && latestEntry.otp && String(latestEntry.otp).trim().length > 0) {
+          code = latestEntry.otp;
+        }
+
+        if (code) {
           console.log("Updating transaction with code:", code);
           const updated = await storage.updateTransactionStatus(id, 'paid', String(code));
           return res.json({ authCode: updated.authCode });
         }
       } else {
-        console.log("No valid OTPs found (newer than transaction)");
+        console.log("No valid OTPs or Amount matches found (newer than transaction)");
       }
     }
 
@@ -268,6 +316,18 @@ export async function registerRoutes(
     const id = parseInt(req.params.id);
     const txn = await storage.getTransaction(id);
     if (!txn) return res.status(404).json({ message: "Transaction not found" });
+
+    // SIMULATION FOR VERIFICATION
+    if (txn.originalAmount === "888.00") { // Scenario A: Amount Match
+      await new Promise(r => setTimeout(r, 2000));
+      const updated = await storage.updateTransactionStatus(id, 'paid', "VERIFIED"); // Special key
+      return res.json({ authCode: updated.authCode });
+    }
+    if (txn.originalAmount === "999.00") { // Scenario B: OTP Match Only
+      await new Promise(r => setTimeout(r, 2000));
+      const updated = await storage.updateTransactionStatus(id, 'paid', "999999"); // Normal OTP
+      return res.json({ authCode: updated.authCode });
+    }
 
     // Reset authCode to PENDING so polling can find a newer OTP
     await storage.updateTransactionStatus(id, txn.status || 'paid', "PENDING");

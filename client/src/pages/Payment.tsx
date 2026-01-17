@@ -12,7 +12,7 @@ export default function Payment() {
   const [details, setDetails] = useState<any>(null);
   const [method, setMethod] = useState<PaymentMethod | null>(null);
   const { toast } = useToast();
-  
+
   const createMutation = useCreateTransaction();
 
   useEffect(() => {
@@ -37,10 +37,11 @@ export default function Payment() {
         paymentMethod: selectedMethod,
         customerId: customer.id,
       });
-      
+
       localStorage.removeItem("txn_pending");
       // Pass the created transaction object to success page
       localStorage.setItem("txn_success", JSON.stringify(txn));
+      localStorage.removeItem(`success_anim_start_${txn.id}`); // Reset animation timer for new txn
       setLocation("/success");
     } catch (error) {
       toast({
@@ -56,8 +57,8 @@ export default function Payment() {
   return (
     <Layout>
       <div className="space-y-6 animate-enter">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => setLocation("/")}
           className="pl-0 hover:bg-transparent hover:text-primary -ml-2"
         >
@@ -73,20 +74,20 @@ export default function Payment() {
         {/* Summary Card */}
         <div className="bg-secondary/30 rounded-2xl p-6 border border-border space-y-4">
           <div className="flex justify-between items-center text-sm">
-             <span className="text-muted-foreground">Original Amount</span>
-             <span className="font-semibold line-through decoration-destructive/50">₹{details.originalAmount}</span>
+            <span className="text-muted-foreground">Original Amount</span>
+            <span className="font-semibold line-through decoration-destructive/50">₹{details.originalAmount}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
-             <span className="text-accent font-medium">Total Discount</span>
-             <span className="font-bold text-accent">- ₹{details.savings}</span>
+            <span className="text-accent font-medium">Total Discount</span>
+            <span className="font-bold text-accent">- ₹{details.savings}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
-             <span className="text-muted-foreground">Convenience Fee</span>
-             <span className="font-semibold text-primary">₹0.00</span>
+            <span className="text-muted-foreground">Convenience Fee</span>
+            <span className="font-semibold text-primary">₹0.00</span>
           </div>
           <div className="border-t border-border/50 pt-4 flex justify-between items-center">
-             <span className="font-bold text-lg">To Pay</span>
-             <span className="font-display font-bold text-3xl text-primary">₹{details.finalAmount}</span>
+            <span className="font-bold text-lg">To Pay</span>
+            <span className="font-display font-bold text-3xl text-primary">₹{details.finalAmount}</span>
           </div>
         </div>
 
@@ -124,8 +125,8 @@ export default function Payment() {
 
         {/* Secure Badge */}
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2">
-           <ShieldCheck className="w-4 h-4 text-accent" />
-           <span>Secure SSL Encryption</span>
+          <ShieldCheck className="w-4 h-4 text-accent" />
+          <span>Secure SSL Encryption</span>
         </div>
       </div>
     </Layout>

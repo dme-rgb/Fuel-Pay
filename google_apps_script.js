@@ -26,11 +26,11 @@ function doGet(e) {
       if (key === "authcode") key = "authCode";
       if (key === "vehiclenumber") key = "vehicleNumber";
 
-      // Special mapping for OTP-AMOUNT DATA (A: Timestamp, B: OTP, C: Amount)
+      // Special mapping for OTP-AMOUNT DATA (A: Timestamp, B: OTP, C: Amount?? NO. C is OTP. D is Amount)
       if (type === "otp-amount-data") {
         if (i === 0) key = "timestamp";
-        if (i === 2) key = "otp";
-        if (i === 3) key = "amount";
+        if (i === 2) key = "otp"; // User confirmed Column C is OTP
+        if (i === 3) key = "amount"; // Column D is Amount
       }
 
       obj[key] = row[i];

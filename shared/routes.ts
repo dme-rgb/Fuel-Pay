@@ -43,9 +43,6 @@ export const api = {
           finalAmount: z.string(),
           discountAmount: z.string(),
           savings: z.string(),
-          fuelPrice: z.string(),
-          discountPerLiter: z.string(),
-          liters: z.string(),
         }),
       },
     },
@@ -66,20 +63,20 @@ export const api = {
       },
     },
     list: {
-        method: 'GET' as const,
-        path: '/api/transactions',
-        responses: {
-            200: z.array(z.custom<typeof transactions.$inferSelect>())
-        }
+      method: 'GET' as const,
+      path: '/api/transactions',
+      responses: {
+        200: z.array(z.custom<typeof transactions.$inferSelect>())
+      }
     }
   },
   otps: {
     refresh: {
-        method: 'POST' as const,
-        path: '/api/otps/refresh',
-        responses: {
-            200: z.object({ message: z.string() })
-        }
+      method: 'POST' as const,
+      path: '/api/otps/refresh',
+      responses: {
+        200: z.object({ message: z.string() })
+      }
     }
   }
 };

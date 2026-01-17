@@ -10,7 +10,11 @@ import { useToast } from "@/hooks/use-toast";
 export default function Success() {
   const [, setLocation] = useLocation();
   const [txn, setTxn] = useState<any>(null);
-  const [showAnimation, setShowAnimation] = useState(true);
+  const [showAnimation, setShowAnimation] = useState(true); // Reverted to true for immediate visibility
+
+  // ... (skipping lines)
+
+
   const [timer, setTimer] = useState(15);
   const [attempts, setAttempts] = useState(0);
   const { toast } = useToast();
@@ -27,7 +31,7 @@ export default function Success() {
     setTxn(txnData);
   }, [setLocation]);
 
-  // Polling Effect - runs whenever txn.authCode is PENDING
+  // Polling Effect
   useEffect(() => {
     if (!txn || txn.authCode !== "PENDING") return;
 
@@ -49,20 +53,57 @@ export default function Success() {
     }, 3000);
 
     return () => clearInterval(pollInterval);
+    return () => clearInterval(pollInterval);
   }, [txn?.authCode, txn?.id]);
 
+  // Auto-Redirect Effect
   useEffect(() => {
-    // Animation disappears after 60s
-    const animTimeout = setTimeout(() => setShowAnimation(false), 60000);
+    // Only redirect if "VERIFIED" (Amount Match)
+    // Keep user on screen if they just got an OTP
+    if (txn && txn.authCode === "VERIFIED") {
+      // Wait 3 seconds to show success state/tick, then redirect
+      const timeout = setTimeout(() => {
+        setLocation("/dashboard");
+      }, 3000);
+      return () => clearTimeout(timeout);
+    }
+  }, [txn?.authCode, setLocation]);
+
+  useEffect(() => {
+    if (!txn) return;
+
+    // Unique key per transaction to prevent timer collisions
+    const storageKey = `success_anim_start_${txn.id}`;
+    const ANIMATION_DURATION = 60000;
+
+    let startTime = localStorage.getItem(storageKey);
+
+    if (!startTime) {
+      startTime = Date.now().toString();
+      localStorage.setItem(storageKey, startTime);
+    }
+
+    const elapsed = Date.now() - parseInt(startTime, 10);
+    const remaining = ANIMATION_DURATION - elapsed;
+
+    if (remaining <= 0) {
+      setShowAnimation(false);
+    } else {
+      setShowAnimation(true);
+      const animTimeout = setTimeout(() => {
+        setShowAnimation(false);
+      }, remaining);
+      return () => clearTimeout(animTimeout);
+    }
+  }, [txn]);
+
+  useEffect(() => {
     // 15s timer for refresh button logic
     const interval = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
-    return () => {
-      clearTimeout(animTimeout);
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   const handleRefresh = async () => {
@@ -181,6 +222,11 @@ export default function Success() {
                 <div className="text-xs font-sans font-normal text-muted-foreground animate-bounce">
                   Syncing with station...
                 </div>
+              </div>
+            ) : txn.authCode === "VERIFIED" ? (
+              <div className="flex flex-col items-center gap-2 text-green-600 animate-in zoom-in duration-300">
+                <Check className="w-12 h-12" />
+                <span className="text-2xl font-bold tracking-widest">VERIFIED</span>
               </div>
             ) : (
               txn.authCode
