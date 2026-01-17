@@ -247,13 +247,24 @@ export async function registerRoutes(
 
     if (otpData && otpData.length > 0) {
       // Filter OTPs that are newer than the transaction
-      // Use timestampStr which contains the IST string, or fall back to createdAt (handled safely)
-      const txnTimestamp = txn.timestampStr || txn.createdAt;
-      const txnTime = new Date(txnTimestamp || 0).getTime();
+      // CRITICAL FIX: Use txn.createdAt (Date object) instead of timestampStr (Locale String)
+      // Locale strings parse differently on Windows vs Linux (Hostinger), causing Invalid Date on server.
+      const txnTime = new Date(txn.createdAt).getTime();
+
+      console.log(`Debug Time Compare:`);
+      console.log(`- Txn ID: ${id}`);
+      console.log(`- Txn CreatedAt: ${txn.createdAt} -> Time: ${txnTime}`);
 
       const validOtps = otpData.filter((item: any) => {
         if (!item.timestamp) return false;
+
+        // item.timestamp is from Sheet (ISO String usually)
         const otpTime = new Date(item.timestamp).getTime();
+
+        // Log first few for debugging
+        if (Math.random() < 0.1) console.log(`-- Sheet Row Time: ${item.timestamp} -> ${otpTime} (Diff: ${otpTime - txnTime})`);
+
+        // precise comparison
         if (otpTime <= txnTime) return false;
 
         // Check 1: OTP Match (Must be non-empty string)
